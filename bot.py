@@ -1,6 +1,7 @@
 import time
 import ctypes
 import sys
+import traceback
 from pywinauto import Desktop, findwindows
 
 def is_admin():
@@ -139,4 +140,15 @@ def main():
     print("\nTodos os passos concluídos com sucesso!")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print()
+        print("=" * 55)
+        print("  ERRO INESPERADO:")
+        print("=" * 55)
+        traceback.print_exc()
+        print("=" * 55)
+    finally:
+        print()
+        input("Pressione ENTER para fechar...")
