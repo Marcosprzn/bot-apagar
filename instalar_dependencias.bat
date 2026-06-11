@@ -114,9 +114,18 @@ echo     Instalando pywinauto...
 echo     Instalando comtypes (necessario para o backend uia)...
 "%PYTHON_EXE%" -m pip install comtypes
 
+echo     Instalando pyautogui (deteccao de imagem)...
+"%PYTHON_EXE%" -m pip install pyautogui
+
+echo     Instalando Pillow (necessario para comparacao de imagens)...
+"%PYTHON_EXE%" -m pip install Pillow
+
+echo     Instalando pywin32 (controle de teclado/mouse)...
+"%PYTHON_EXE%" -m pip install pywin32
+
 echo.
 echo     Verificando instalacao...
-"%PYTHON_EXE%" -c "import pywinauto; print('pywinauto instalado com sucesso! Versao:', pywinauto.__version__)"
+"%PYTHON_EXE%" -c "import pywinauto; import pyautogui; import PIL; print('Todas as bibliotecas OK!')"
 
 if %errorlevel% equ 0 (
     echo.
