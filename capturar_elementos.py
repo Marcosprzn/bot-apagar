@@ -26,22 +26,31 @@ def main():
                 # Obtém o elemento UIA abaixo do cursor
                 elem = desktop.from_point(x, y)
                 
-                print("-" * 50)
-                print("DADOS PARA ENVIAR PARA O BOT:")
-                print(f"  Title (Name) : '{elem.window_text()}'")
-                print(f"  ClassName    : '{elem.class_name()}'")
-                print(f"  ControlType  : '{elem.element_info.control_type}'")
-                print(f"  AutomationId : '{elem.element_info.automation_id}'")
+                info = (
+                    "-" * 50 + "\n"
+                    f"DADOS CAPTURADOS EM: {time.strftime('%H:%M:%S')} (X:{x} Y:{y})\n"
+                    f"  Title (Name) : '{elem.window_text()}'\n"
+                    f"  ClassName    : '{elem.class_name()}'\n"
+                    f"  ControlType  : '{elem.element_info.control_type}'\n"
+                    f"  AutomationId : '{elem.element_info.automation_id}'\n"
+                )
                 
                 # Mostra também o elemento pai para ajudar no contexto
                 try:
                     parent = elem.parent()
-                    print(f"  Janela/Pai   : '{parent.window_text()}' (Class: {parent.class_name()})")
+                    info += f"  Janela/Pai   : '{parent.window_text()}' (Class: {parent.class_name()})\n"
                 except:
                     pass
                 
-                print("-" * 50)
-                print("\nPronto para capturar o próximo (pressione F8 novamente)...")
+                info += "-" * 50 + "\n"
+                
+                # Imprime na tela
+                print(info)
+                print("Pronto para capturar o próximo (pressione F8 novamente)...")
+
+                # Salva no arquivo .txt
+                with open("elementos_capturados.txt", "a", encoding="utf-8") as f:
+                    f.write(info)
 
             except Exception as e:
                 print(f"\n[ERRO] Não foi possível capturar o elemento: {e}")
