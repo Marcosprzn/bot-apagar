@@ -76,53 +76,83 @@ def main():
     # ABORDAGEM POR COORDENADAS (FALLBACK) SOLICITADA PELO USUÁRIO
     # =====================================================================
     from pywinauto import mouse
+    import win32api
+    import win32con
+    
+    pausado = False
+
+    def sleep_com_pausa(segundos):
+        nonlocal pausado
+        inicio = time.time()
+        while time.time() - inicio < segundos:
+            # Verifica se F8 foi pressionado para pausar
+            if win32api.GetAsyncKeyState(win32con.VK_F8) & 0x8000:
+                pausado = not pausado
+                if pausado:
+                    print("\n[PAUSADO] Automação pausada! Pressione F8 novamente para continuar...")
+                else:
+                    print("\n[RETOMADO] Continuando automação...")
+                time.sleep(0.5) # Evita múltiplos registros da mesma tecla (debounce)
+            
+            # Fica preso aqui dentro enquanto estiver pausado
+            while pausado:
+                if win32api.GetAsyncKeyState(win32con.VK_F8) & 0x8000:
+                    pausado = False
+                    print("\n[RETOMADO] Continuando automação...")
+                    time.sleep(0.5)
+                    break
+                time.sleep(0.1)
+                
+            time.sleep(0.1)
     
     contador = 1
     print("\nIniciando o ciclo de exclusão por coordenadas (X, Y)...")
     print("IMPORTANTE: Não mova a janela do MEGA ERP e não use o mouse durante o processo!")
-    print("Pressione CTRL+C no terminal para parar o bot a qualquer momento.\n")
+    print("-> Pressione [ F8 ] para PAUSAR ou RETOMAR o bot a qualquer momento.")
+    print("-> Pressione [ CTRL+C ] no terminal para parar o bot de vez.")
+    
+    print("\nO bot vai começar em 5 segundos. Prepare a tela do MEGA ERP...")
+    time.sleep(5)
 
     while True:
+        # Checa se o usuário quis pausar antes de começar o próximo registro
+        sleep_com_pausa(0.1) 
+        
         print(f"=== APAGANDO REGISTRO {contador} ===")
         
         try:
             # 1. Procurar (X:414 Y:149)
             print("1. Clicando em Procurar...")
             mouse.click(button='left', coords=(414, 149))
-            time.sleep(2)  # Aguarda a janela de busca abrir
+            sleep_com_pausa(2)  # Aguarda a janela de busca abrir
 
             # 2. Aplicar (X:815 Y:644)
             print("2. Clicando em Aplicar...")
             mouse.click(button='left', coords=(815, 644))
-            time.sleep(3)  # Aguarda a tabela de resultados carregar
+            sleep_com_pausa(3)  # Aguarda a tabela de resultados carregar
 
             # 3. Tabela (X:443 Y:242)
             print("3. Clicando no 1º item da Tabela...")
             mouse.click(button='left', coords=(443, 242))
-            time.sleep(1)
+            sleep_com_pausa(1)
 
             # 4. Selecionar (X:1021 Y:582)
             print("4. Clicando em Selecionar...")
             mouse.click(button='left', coords=(1021, 582))
-            time.sleep(2)  # Aguarda fechar a busca e carregar o registro no painel
+            sleep_com_pausa(2)  # Aguarda fechar a busca e carregar o registro no painel
             
             # ==========================================================
             # VERIFICAÇÃO PARA NÃO FICAR EM LOOP INFINITO
             # ==========================================================
-            # Se a tabela estava vazia, o clique no Selecionar não fez nada
-            # e não voltamos para o dashboard, ou voltamos mas não tem registro.
-            # Vamos verificar o elemento na posição do "Excluir" (X:1252 Y:144)
             print("Verificando se o registro foi carregado...")
             elem_excluir = desktop.from_point(1252, 144)
             
-            # Verifica se realmente tem um botão "Excluir" nessa posição
             if elem_excluir.window_text() != "Excluir":
                 print("-> O botão Excluir não foi encontrado na posição esperada.")
                 print("-> Isso significa que a tabela acabou ou a janela mudou.")
                 print("\nFIM DOS REGISTROS! Loop finalizado.")
                 break
                 
-            # Verifica se o botão Excluir está clicável/habilitado
             if not elem_excluir.is_enabled():
                 print("-> O botão Excluir está desabilitado na tela.")
                 print("-> Nenhum registro foi selecionado da tabela (ela deve estar vazia).")
@@ -132,7 +162,7 @@ def main():
             # 5. Excluir (X:1252 Y:144)
             print("5. Clicando em Excluir...")
             mouse.click(button='left', coords=(1252, 144))
-            time.sleep(1)  # Aguarda o popup de Sim/Não
+            sleep_com_pausa(1)  # Aguarda o popup de Sim/Não
 
             # Opcional: Verificando se o "Sim" abriu mesmo
             elem_sim = desktop.from_point(684, 423)
@@ -143,7 +173,7 @@ def main():
                 print("Aviso: O botão Sim não estava na coordenada (684, 423). Tentando clicar mesmo assim...")
                 mouse.click(button='left', coords=(684, 423))
                 
-            time.sleep(2)  # Aguarda a exclusão concluir e a tela resetar
+            sleep_com_pausa(2)  # Aguarda a exclusão concluir e a tela resetar
 
             print(f"Registro {contador} excluído com sucesso!\n")
             contador += 1
