@@ -73,18 +73,22 @@ def main():
         return
 
     # 1. Clicar em @[botao procurar.txt]
-    # Botão está na janela "Movimento Financeiro" (filho da janela principal)
+    # NOTA: AutomationId muda a cada sessao. Usamos ClassName + title (estáveis).
+    # ClassName: "TMgBitBtn", Name: "Procurar"
     print("Clicando no botão Procurar...")
     try:
-        # AutomationId: "66582", ClassName: "TMgBitBtn", Name: "Procurar"
-        botao_procurar = janela_principal.child_window(auto_id="66582", control_type="Button")
+        botao_procurar = janela_principal.child_window(
+            title="Procurar",
+            class_name="TMgBitBtn",
+            control_type="Button"
+        )
         botao_procurar.click_input()
         time.sleep(1.5)  # Aguarda a janela de busca abrir
     except Exception as e:
         print(f"Erro ao clicar no botão Procurar: {e}")
         return
 
-    # Localiza a janela filha "Procurar Movimento Financeiro" que abriu
+    # Localiza a janela "Procurar Movimento Financeiro" que abriu
     print("Aguardando a janela de pesquisa abrir...")
     try:
         janela_busca = desktop.window(title_re=".*Procurar Movimento Financeiro.*")
@@ -93,45 +97,57 @@ def main():
         print(f"Erro ao encontrar a janela de pesquisa: {e}")
         return
 
-    # 2. Colocar data em @[campo data um.txt]
-    print("Inserindo a primeira data (01/01/2026)...")
+    # 2 e 3. Preencher campos de data
+    # ClassName: "TcxCustomDropDownInnerEdit" - ambos campos têm a mesma classe e sem título fixo.
+    # Estratégia: buscar todos e ordenar pela posição X (esquerda = data início, direita = data fim)
+    print("Buscando campos de data...")
     try:
-        # AutomationId: "197502", ClassName: "TcxCustomDropDownInnerEdit"
-        campo_data_um = janela_busca.child_window(auto_id="197502", control_type="Edit")
-        campo_data_um.click_input()
-        campo_data_um.set_edit_text("01/01/2026")
-        time.sleep(0.5)
-    except Exception as e:
-        print(f"Erro ao inserir a primeira data: {e}")
+        campos_data = janela_busca.children(class_name="TcxCustomDropDownInnerEdit")
 
-    # 3. Colocar data em @[campo data dois.txt]
-    print("Inserindo a segunda data (31/05/2026)...")
-    try:
-        # AutomationId: "197490", ClassName: "TcxCustomDropDownInnerEdit"
-        campo_data_dois = janela_busca.child_window(auto_id="197490", control_type="Edit")
-        campo_data_dois.click_input()
-        campo_data_dois.set_edit_text("31/05/2026")
-        time.sleep(0.5)
+        if len(campos_data) < 2:
+            print(f"  AVISO: Esperava 2 campos de data, encontrou {len(campos_data)}.")
+        else:
+            # Ordena pela posição horizontal (rectangle().left)
+            campos_data = sorted(campos_data, key=lambda c: c.rectangle().left)
+
+            # Campo data início (mais à esquerda)
+            print("Inserindo a primeira data (01/01/2026)...")
+            campos_data[0].click_input()
+            campos_data[0].type_keys("^a01/01/2026", with_spaces=True)
+            time.sleep(0.5)
+
+            # Campo data fim (mais à direita)
+            print("Inserindo a segunda data (31/05/2026)...")
+            campos_data[1].click_input()
+            campos_data[1].type_keys("^a31/05/2026", with_spaces=True)
+            time.sleep(0.5)
+
     except Exception as e:
-        print(f"Erro ao inserir a segunda data: {e}")
+        print(f"Erro ao preencher campos de data: {e}")
 
     # 4. Clicar no primeiro item da tabela @[dados tabela.txt]
-    # O botão "Selecionar" está na janela principal (Movimento Financeiro)
+    # ClassName: "TMgSpeedButton", Name: "Selecionar"
     print("Clicando no botão Selecionar (primeiro item da tabela)...")
     try:
-        # AutomationId: "1115764", ClassName: "TMgSpeedButton", Name: "Selecionar"
-        botao_selecionar = janela_principal.child_window(auto_id="1115764", control_type="Button")
+        botao_selecionar = janela_principal.child_window(
+            title="Selecionar",
+            class_name="TMgSpeedButton",
+            control_type="Button"
+        )
         botao_selecionar.click_input()
         time.sleep(1)
     except Exception as e:
         print(f"Erro ao clicar no item da tabela: {e}")
 
     # 5. Clicar no botão Aplicar @[botao aplicar.txt]
+    # ClassName: "TMgBitBtn", Name: "Aplicar"
     print("Clicando no botão Aplicar...")
     try:
-        # AutomationId: "132308", ClassName: "TMgBitBtn", Name: "Aplicar"
-        # Este botão aparece na janela de busca (Procurar Movimento Financeiro)
-        botao_aplicar = janela_busca.child_window(auto_id="132308", control_type="Button")
+        botao_aplicar = janela_busca.child_window(
+            title="Aplicar",
+            class_name="TMgBitBtn",
+            control_type="Button"
+        )
         botao_aplicar.click_input()
         time.sleep(1)
     except Exception as e:
