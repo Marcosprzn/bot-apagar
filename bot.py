@@ -72,23 +72,9 @@ def main():
         input("\nPressione ENTER para sair...")
         return
 
-    # 1. Clicar em @[botao procurar.txt]
-    # NOTA: AutomationId muda a cada sessao. Usamos ClassName + title (estáveis).
-    # ClassName: "TMgBitBtn", Name: "Procurar"
-    print("Clicando no botão Procurar...")
-    try:
-        botao_procurar = janela_principal.child_window(
-            title="Procurar",
-            class_name="TMgBitBtn",
-            control_type="Button"
-        )
-        botao_procurar.click_input()
-        time.sleep(1.5)  # Aguarda a janela de busca abrir
-    except Exception as e:
-        print(f"Erro ao clicar no botão Procurar: {e}")
-        return
-
-    # Localiza a janela "Procurar Movimento Financeiro" que abriu
+    # O bot agora vai focar apenas em clicar no botão "Aplicar" e depois "Selecionar"
+    
+    # Localiza a janela "Procurar Movimento Financeiro"
     print("Aguardando a janela de pesquisa abrir...")
     try:
         janela_busca = desktop.window(title_re=".*Procurar Movimento Financeiro.*")
@@ -97,74 +83,7 @@ def main():
         print(f"Erro ao encontrar a janela de pesquisa: {e}")
         return
 
-    # 2 e 3. Preencher campos de data (se necessário)
-    # ClassName: "TcxCustomDropDownInnerEdit" - campos aninhados dentro de paineis.
-    # Usa descendants() para buscar em toda a hierarquia (nao apenas filhos diretos).
-    # Se as datas já estiverem corretas, pula o preenchimento.
-    DATA_INICIO = "01/01/2026"
-    DATA_FIM    = "31/05/2026"
-
-    print("Buscando campos de data na janela...")
-    try:
-        campos_data = janela_busca.descendants(class_name="TcxCustomDropDownInnerEdit")
-        print(f"  Campos de data encontrados: {len(campos_data)}")
-
-        if len(campos_data) < 2:
-            print(f"  AVISO: Esperava 2 campos de data, encontrou {len(campos_data)}.")
-            for i, c in enumerate(campos_data):
-                print(f"    Campo {i}: rect={c.rectangle()}")
-        else:
-            # Ordena pela posição horizontal: esquerda = data início, direita = data fim
-            campos_data = sorted(campos_data, key=lambda c: c.rectangle().left)
-            campo_inicio = campos_data[0]
-            campo_fim    = campos_data[1]
-
-            # Lê os valores atuais dos campos (IsValuePatternAvailable = true)
-            try:
-                valor_inicio = campo_inicio.get_value()
-                valor_fim    = campo_fim.get_value()
-            except:
-                valor_inicio = ""
-                valor_fim    = ""
-
-            print(f"  Data início atual : '{valor_inicio}'")
-            print(f"  Data fim atual    : '{valor_fim}'")
-
-            # Só preenche se o valor estiver diferente do esperado
-            if valor_inicio == DATA_INICIO:
-                print(f"  Data início já está correta, pulando...")
-            else:
-                print(f"  Inserindo data início: {DATA_INICIO}")
-                campo_inicio.click_input()
-                campo_inicio.type_keys("^a01012026", with_spaces=False)
-                time.sleep(0.5)
-
-            if valor_fim == DATA_FIM:
-                print(f"  Data fim já está correta, pulando...")
-            else:
-                print(f"  Inserindo data fim: {DATA_FIM}")
-                campo_fim.click_input()
-                campo_fim.type_keys("^a31052026", with_spaces=False)
-                time.sleep(0.5)
-
-    except Exception as e:
-        print(f"Erro ao preencher campos de data: {e}")
-
-    # 4. Clicar no primeiro item da tabela @[dados tabela.txt]
-    # ClassName: "TMgSpeedButton", Name: "Selecionar"
-    print("Clicando no botão Selecionar (primeiro item da tabela)...")
-    try:
-        botao_selecionar = janela_principal.child_window(
-            title="Selecionar",
-            class_name="TMgSpeedButton",
-            control_type="Button"
-        )
-        botao_selecionar.click_input()
-        time.sleep(1)
-    except Exception as e:
-        print(f"Erro ao clicar no item da tabela: {e}")
-
-    # 5. Clicar no botão Aplicar @[botao aplicar.txt]
+    # 1. Clicar no botão Aplicar @[botao aplicar.txt]
     # ClassName: "TMgBitBtn", Name: "Aplicar"
     print("Clicando no botão Aplicar...")
     try:
@@ -174,11 +93,43 @@ def main():
             control_type="Button"
         )
         botao_aplicar.click_input()
-        time.sleep(1)
+        time.sleep(2) # Aguarda a tabela carregar e a janela fechar
     except Exception as e:
         print(f"Erro ao clicar no botão Aplicar: {e}")
 
-    print("\nTodos os passos concluídos com sucesso!")
+    # 2. Clicar no primeiro item da tabela @[dados tabela.txt]
+    # O botão "Selecionar" está na janela principal (Movimento Financeiro)
+    print("Clicando no botão Selecionar (primeiro item da tabela)...")
+    try:
+        # Pega a janela principal novamente
+        janela_principal = None
+        padroes = [
+            ".*Mega Empresarial.*",
+            ".*Mega ERP.*",
+            ".*Movimento Financeiro.*",
+        ]
+        for padrao in padroes:
+            try:
+                janela_principal = desktop.window(title_re=padrao)
+                janela_principal.wait('visible', timeout=5)
+                break
+            except:
+                continue
+                
+        if janela_principal:
+            botao_selecionar = janela_principal.child_window(
+                title="Selecionar",
+                class_name="TMgSpeedButton",
+                control_type="Button"
+            )
+            botao_selecionar.click_input()
+            time.sleep(1)
+        else:
+            print("Janela principal não encontrada para clicar em Selecionar.")
+    except Exception as e:
+        print(f"Erro ao clicar no item da tabela: {e}")
+
+    print("\nPassos do 'Aplicar' em diante concluídos com sucesso!")
 
 if __name__ == "__main__":
     try:
