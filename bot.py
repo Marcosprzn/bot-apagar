@@ -134,10 +134,41 @@ def main():
         )
         botao_selecionar.wait('visible', timeout=5)
         botao_selecionar.click_input()
-        time.sleep(1)
+        time.sleep(2)  # Aguarda a tela voltar/atualizar após selecionar
 
     except Exception as e:
         print(f"Erro ao interagir com a tabela ou botão Selecionar: {e}")
+        return
+
+    # 5. Clicar no botão Excluir
+    print("Procurando o botão Excluir...")
+    try:
+        botao_excluir = janela_principal.child_window(
+            title="Excluir",
+            class_name="TMgSpeedButton",
+            control_type="Button"
+        )
+        botao_excluir.wait('visible', timeout=10)
+        botao_excluir.click_input()
+        time.sleep(1)  # Aguarda o popup de confirmação aparecer
+    except Exception as e:
+        print(f"Erro ao clicar no botão Excluir: {e}")
+        return
+
+    # 6. Clicar no botão Sim
+    print("Aguardando a janela de confirmação para clicar em Sim...")
+    try:
+        botao_sim = janela_principal.child_window(
+            title="Sim",
+            class_name="TcxButton",
+            control_type="Button"
+        )
+        botao_sim.wait('visible', timeout=5)
+        botao_sim.click_input()
+        time.sleep(1)
+    except Exception as e:
+        print(f"Erro ao confirmar exclusão (botão Sim): {e}")
+        return
 
     print("\nTodos os passos concluídos com sucesso!")
 
