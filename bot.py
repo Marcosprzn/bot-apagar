@@ -97,9 +97,13 @@ def main():
         print(f"Erro ao encontrar a janela de pesquisa: {e}")
         return
 
-    # 2 e 3. Preencher campos de data
+    # 2 e 3. Preencher campos de data (se necessário)
     # ClassName: "TcxCustomDropDownInnerEdit" - campos aninhados dentro de paineis.
     # Usa descendants() para buscar em toda a hierarquia (nao apenas filhos diretos).
+    # Se as datas já estiverem corretas, pula o preenchimento.
+    DATA_INICIO = "01/01/2026"
+    DATA_FIM    = "31/05/2026"
+
     print("Buscando campos de data na janela...")
     try:
         campos_data = janela_busca.descendants(class_name="TcxCustomDropDownInnerEdit")
@@ -110,21 +114,38 @@ def main():
             for i, c in enumerate(campos_data):
                 print(f"    Campo {i}: rect={c.rectangle()}")
         else:
-            # Ordena pela posição horizontal (rectangle().left)
-            # O campo mais à esquerda = data início, o mais à direita = data fim
+            # Ordena pela posição horizontal: esquerda = data início, direita = data fim
             campos_data = sorted(campos_data, key=lambda c: c.rectangle().left)
+            campo_inicio = campos_data[0]
+            campo_fim    = campos_data[1]
 
-            # Campo data início (mais à esquerda)
-            print("Inserindo a primeira data (01/01/2026)...")
-            campos_data[0].click_input()
-            campos_data[0].type_keys("^a01012026", with_spaces=False)
-            time.sleep(0.5)
+            # Lê os valores atuais dos campos (IsValuePatternAvailable = true)
+            try:
+                valor_inicio = campo_inicio.get_value()
+                valor_fim    = campo_fim.get_value()
+            except:
+                valor_inicio = ""
+                valor_fim    = ""
 
-            # Campo data fim (mais à direita)
-            print("Inserindo a segunda data (31/05/2026)...")
-            campos_data[1].click_input()
-            campos_data[1].type_keys("^a31052026", with_spaces=False)
-            time.sleep(0.5)
+            print(f"  Data início atual : '{valor_inicio}'")
+            print(f"  Data fim atual    : '{valor_fim}'")
+
+            # Só preenche se o valor estiver diferente do esperado
+            if valor_inicio == DATA_INICIO:
+                print(f"  Data início já está correta, pulando...")
+            else:
+                print(f"  Inserindo data início: {DATA_INICIO}")
+                campo_inicio.click_input()
+                campo_inicio.type_keys("^a01012026", with_spaces=False)
+                time.sleep(0.5)
+
+            if valor_fim == DATA_FIM:
+                print(f"  Data fim já está correta, pulando...")
+            else:
+                print(f"  Inserindo data fim: {DATA_FIM}")
+                campo_fim.click_input()
+                campo_fim.type_keys("^a31052026", with_spaces=False)
+                time.sleep(0.5)
 
     except Exception as e:
         print(f"Erro ao preencher campos de data: {e}")
