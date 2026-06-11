@@ -1,0 +1,74 @@
+@echo off
+title Bot MEGA ERP - Executar como Admin
+color 0A
+
+echo ===================================================
+echo    Bot MEGA ERP - Iniciando como Administrador
+echo ===================================================
+echo.
+
+REM Detecta o caminho do Python (tenta varios locais comuns)
+set "PYTHON_EXE="
+
+if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+    set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    goto :found_python
+)
+
+if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
+    set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    goto :found_python
+)
+
+if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" (
+    set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    goto :found_python
+)
+
+if exist "C:\Python311\python.exe" (
+    set "PYTHON_EXE=C:\Python311\python.exe"
+    goto :found_python
+)
+
+REM Tenta o python do PATH
+python --version >nul 2>&1
+if %errorlevel% equ 0 (
+    set "PYTHON_EXE=python"
+    goto :found_python
+)
+
+echo ERRO: Python nao encontrado!
+echo Execute primeiro o arquivo instalar_dependencias.bat
+echo.
+pause
+exit /b 1
+
+:found_python
+echo Python encontrado: %PYTHON_EXE%
+echo.
+
+REM Pega o diretorio onde este .bat esta localizado
+set "BOT_DIR=%~dp0"
+set "BOT_SCRIPT=%BOT_DIR%bot.py"
+
+if not exist "%BOT_SCRIPT%" (
+    echo ERRO: bot.py nao encontrado em: %BOT_SCRIPT%
+    echo Certifique-se que o executar_bot.bat esta na mesma pasta que o bot.py
+    echo.
+    pause
+    exit /b 1
+)
+
+echo Script: %BOT_SCRIPT%
+echo.
+echo Solicitando permissao de Administrador...
+echo (O Windows vai pedir confirmacao - clique em SIM)
+echo.
+
+REM Eleva o processo para Administrador via PowerShell
+REM O bot precisa rodar como admin pois o MEGA ERP eh um processo elevado
+powershell -Command "Start-Process -FilePath '%PYTHON_EXE%' -ArgumentList '\"%BOT_SCRIPT%\"' -Verb RunAs -Wait"
+
+echo.
+echo Bot finalizado.
+pause
