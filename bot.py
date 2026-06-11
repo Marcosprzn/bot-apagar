@@ -129,55 +129,30 @@ def main():
             # 2. Aplicar (X:815 Y:644)
             print("2. Clicando em Aplicar...")
             mouse.click(button='left', coords=(815, 644))
-            sleep_com_pausa(3)  # Aguarda a tabela de resultados carregar
+            time.sleep(0.8)  # Fixo 0.8s - mais rapido que sleep_com_pausa
 
             # ==========================================================
             # VERIFICAÇÃO DE FIM DOS REGISTROS (Lançamento não encontrado)
             # ==========================================================
-            # Depois de Aplicar, se não houver mais registros, o MEGA mostra a mensagem
             try:
                 msg_fim = desktop.child_window(title="Lançamento não encontrado.", control_type="Pane")
-                if msg_fim.exists(timeout=1):
+                if msg_fim.exists(timeout=0.5):
                     print("\n-> Mensagem 'Lançamento não encontrado.' detectada!")
                     print("-> Todos os itens da tabela foram excluídos com sucesso.")
                     print("\n=== FIM DA AUTOMAÇÃO! ===")
-                    
-                    # Clica no botão OK ou fechar da mensagem (tentativa de clicar no centro dela)
-                    try:
-                        msg_fim.click_input()
-                    except:
-                        pass
                     break
             except:
-                pass # Segue o jogo, significa que tem registros para apagar
+                pass  # Tem registros, segue o fluxo
 
-            # 3. Tabela (X:443 Y:242)
+            # 3. Tabela (X:367 Y:244) - primeiro item
             print("3. Clicando no 1º item da Tabela...")
-            mouse.click(button='left', coords=(443, 242))
-            sleep_com_pausa(1)
+            mouse.click(button='left', coords=(367, 244))
+            sleep_com_pausa(0.5)
 
             # 4. Selecionar (X:1021 Y:582)
             print("4. Clicando em Selecionar...")
             mouse.click(button='left', coords=(1021, 582))
-            sleep_com_pausa(2)  # Aguarda fechar a busca e carregar o registro no painel
-            
-            # ==========================================================
-            # VERIFICAÇÃO PARA NÃO FICAR EM LOOP INFINITO
-            # ==========================================================
-            print("Verificando se o registro foi carregado...")
-            elem_excluir = desktop.from_point(1252, 144)
-            
-            if elem_excluir.window_text() != "Excluir":
-                print("-> O botão Excluir não foi encontrado na posição esperada.")
-                print("-> Isso significa que a tabela acabou ou a janela mudou.")
-                print("\nFIM DOS REGISTROS! Loop finalizado.")
-                break
-                
-            if not elem_excluir.is_enabled():
-                print("-> O botão Excluir está desabilitado na tela.")
-                print("-> Nenhum registro foi selecionado da tabela (ela deve estar vazia).")
-                print("\nFIM DOS REGISTROS! Loop finalizado.")
-                break
+            sleep_com_pausa(1.5)  # Aguarda fechar a busca e carregar o registro no painel
 
             # 5. Excluir (X:1252 Y:144)
             print("5. Clicando em Excluir...")
