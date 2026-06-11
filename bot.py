@@ -185,19 +185,35 @@ def selecionar_imagem():
     print("  SELECIONAR IMAGEM DE PARADA")
     linha()
     print()
-    print("  Cole o caminho completo da imagem abaixo.")
-    print("  Dica: clique com botão direito na imagem -> 'Copiar como caminho'")
+    print("  Abrindo o explorador de arquivos... (pode aparecer atrás desta janela)")
     print()
 
-    caminho = input("  Caminho da imagem: ").strip().strip('"')
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
 
-    if os.path.exists(caminho):
-        IMAGEM_PARADA = caminho
-        print()
-        print(f"  [OK] Imagem configurada: {os.path.basename(caminho)}")
-    else:
-        print()
-        print("  [ERRO] Arquivo não encontrado. Verifique o caminho.")
+        # Cria uma janela tkinter invisível só para usar o filedialog
+        root = tk.Tk()
+        root.withdraw()          # Esconde a janela principal
+        root.attributes('-topmost', True)  # Garante que o dialog aparece na frente
+
+        caminho = filedialog.askopenfilename(
+            title="Selecione a imagem de parada",
+            filetypes=[
+                ("Imagens", "*.png *.jpg *.jpeg *.bmp"),
+                ("Todos os arquivos", "*.*")
+            ]
+        )
+        root.destroy()
+
+        if caminho:
+            IMAGEM_PARADA = caminho
+            print(f"  [OK] Imagem configurada: {os.path.basename(caminho)}")
+        else:
+            print("  [CANCELADO] Nenhuma imagem selecionada.")
+
+    except Exception as e:
+        print(f"  [ERRO] Não foi possível abrir o explorador: {e}")
 
     print()
     input("  Pressione ENTER para voltar ao menu...")
