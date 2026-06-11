@@ -72,105 +72,95 @@ def main():
         input("\nPressione ENTER para sair...")
         return
 
-    # 1. Clicar no botão "Procurar"
-    print("Clicando no botão Procurar...")
-    try:
-        botao_procurar = janela_principal.child_window(
-            title="Procurar",
-            class_name="TMgBitBtn",
-            control_type="Button"
-        )
-        botao_procurar.click_input()
-        time.sleep(2)  # Aguarda a janela de busca abrir internamente
-    except Exception as e:
-        print(f"Erro ao clicar no botão Procurar: {e}")
-        return
+    # Sistema de "Aprendizado" para deixar as próximas repetições muito mais rápidas!
+    # O MEGA ERP muda o AutomationId toda vez que abre, MAS durante a mesma sessão eles são fixos.
+    # Na 1ª vez ele busca devagar (por Título/Classe). Na 2ª vez ele lembra o ID e acha quase instantaneamente.
+    CACHE = {}
 
-    # 2. Clicar no botão "Aplicar" na janela de pesquisa interna
-    # Como o MEGA ERP é MDI, a janela de pesquisa não é separada do programa,
-    # ela é um painel filho da janela principal.
-    print("Aguardando o botão Aplicar aparecer...")
-    try:
-        botao_aplicar = janela_principal.child_window(
-            title="Aplicar",
-            class_name="TMgBitBtn",
-            control_type="Button"
-        )
-        # wait('visible') garante que a janelinha interna carregou
-        botao_aplicar.wait('visible', timeout=10)
-        botao_aplicar.click_input()
-        time.sleep(3)  # Aguarda a tabela de resultados carregar
-    except Exception as e:
-        print(f"Erro ao interagir com o botão Aplicar: {e}")
-        return
-
-    # 3. Interagir com a Tabela interna
-    print("Procurando a tabela de resultados...")
-    try:
-        # A tabela também é filha da janela principal
-        tabela = janela_principal.child_window(class_name="TcxGridSite", control_type="Pane")
-        tabela.wait('visible', timeout=10)
-        print("Tabela encontrada. Clicando no primeiro item...")
-
-        try:
-            # TcxGridSite às vezes expõe as linhas como filhos
-            itens = tabela.children()
-            if itens:
-                itens[0].click_input()
-            else:
-                raise Exception("Sem filhos detectados")
-        except:
-            # Fallback: clica na coordenada (x=50, y=30) relativa à tabela
-            tabela.click_input(coords=(50, 30))
+    def get_elemento_rapido(nome_logico, parent, **kwargs):
+        # 1. Tenta achar rápido pelo cache (ID aprendido)
+        if nome_logico in CACHE:
+            try:
+                rapido = parent.child_window(auto_id=CACHE[nome_logico], control_type=kwargs.get("control_type", "Button"))
+                if rapido.exists(timeout=1):
+                    return rapido
+            except:
+                pass # Se falhar, cai na busca normal
         
-        time.sleep(1)
+        # 2. Busca normal, mais lenta (por title e class_name)
+        lento = parent.child_window(**kwargs)
+        lento.wait('exists', timeout=10) # Aguarda existir
+        
+        # 3. "Aprende" o AutomationId para a próxima repetição!
+        try:
+            CACHE[nome_logico] = lento.element_info.automation_id
+        except:
+            pass
+            
+        return lento
 
-        # 4. Clicar no botão Selecionar
-        print("Clicando no botão Selecionar...")
-        botao_selecionar = janela_principal.child_window(
-            title="Selecionar",
-            class_name="TMgSpeedButton",
-            control_type="Button"
-        )
-        botao_selecionar.wait('visible', timeout=5)
-        botao_selecionar.click_input()
-        time.sleep(2)  # Aguarda a tela voltar/atualizar após selecionar
+    contador = 1
+    print("\nIniciando o ciclo de exclusão...")
+    print("O bot vai APRENDER os botões na 1ª vez. Da 2ª em diante será super rápido!")
+    print("Pressione CTRL+C no terminal para parar o bot a qualquer momento.\n")
 
-    except Exception as e:
-        print(f"Erro ao interagir com a tabela ou botão Selecionar: {e}")
-        return
+    while True:
+        print(f"=== APAGANDO REGISTRO {contador} ===")
+        
+        try:
+            # 1. Clicar no botão "Procurar"
+            botao_procurar = get_elemento_rapido("btn_procurar", janela_principal, title="Procurar", class_name="TMgBitBtn", control_type="Button")
+            botao_procurar.wait('ready', timeout=10)
+            botao_procurar.click_input()
+            time.sleep(1) # Espera a janela abrir internamente
 
-    # 5. Clicar no botão Excluir
-    print("Procurando o botão Excluir...")
-    try:
-        botao_excluir = janela_principal.child_window(
-            title="Excluir",
-            class_name="TMgSpeedButton",
-            control_type="Button"
-        )
-        botao_excluir.wait('visible', timeout=10)
-        botao_excluir.click_input()
-        time.sleep(1)  # Aguarda o popup de confirmação aparecer
-    except Exception as e:
-        print(f"Erro ao clicar no botão Excluir: {e}")
-        return
+            # 2. Clicar no botão "Aplicar"
+            botao_aplicar = get_elemento_rapido("btn_aplicar", janela_principal, title="Aplicar", class_name="TMgBitBtn", control_type="Button")
+            botao_aplicar.wait('ready', timeout=10)
+            botao_aplicar.click_input()
+            time.sleep(1.5) # Espera a tabela atualizar
 
-    # 6. Clicar no botão Sim
-    print("Aguardando a janela de confirmação para clicar em Sim...")
-    try:
-        botao_sim = janela_principal.child_window(
-            title="Sim",
-            class_name="TcxButton",
-            control_type="Button"
-        )
-        botao_sim.wait('visible', timeout=5)
-        botao_sim.click_input()
-        time.sleep(1)
-    except Exception as e:
-        print(f"Erro ao confirmar exclusão (botão Sim): {e}")
-        return
+            # 3. Interagir com a Tabela (clicando na primeira linha)
+            tabela = get_elemento_rapido("tabela_resultados", janela_principal, class_name="TcxGridSite", control_type="Pane")
+            tabela.wait('visible', timeout=10)
+            tabela.click_input(coords=(50, 30))
+            time.sleep(0.5)
 
-    print("\nTodos os passos concluídos com sucesso!")
+            # 4. Clicar no botão "Selecionar"
+            botao_selecionar = get_elemento_rapido("btn_selecionar", janela_principal, title="Selecionar", class_name="TMgSpeedButton", control_type="Button")
+            botao_selecionar.wait('ready', timeout=5)
+            botao_selecionar.click_input()
+            time.sleep(1.5) # Espera voltar para o dashboard do Mega ERP
+
+            # 5. Clicar no botão "Excluir"
+            botao_excluir = get_elemento_rapido("btn_excluir", janela_principal, title="Excluir", class_name="TMgSpeedButton", control_type="Button")
+            botao_excluir.wait('ready', timeout=10) # Garante que o botão está habilitado e visível
+            botao_excluir.click_input()
+            time.sleep(1) # Aguarda o popup de confirmação
+
+            # 6. Clicar no botão "Sim" (Confirmação)
+            # Pode estar na janela_principal ou ser um popup top-level. Vamos tentar primeiro na janela_principal.
+            try:
+                botao_sim = get_elemento_rapido("btn_sim", janela_principal, title="Sim", class_name="TcxButton", control_type="Button")
+                botao_sim.wait('ready', timeout=5)
+                botao_sim.click_input()
+            except:
+                # Fallback: Se for uma janela popup isolada do sistema
+                botao_sim_desk = desktop.child_window(title="Sim", class_name="TcxButton", control_type="Button")
+                botao_sim_desk.wait('ready', timeout=5)
+                botao_sim_desk.click_input()
+
+            print(f"Registro {contador} excluído com sucesso!\n")
+            contador += 1
+            time.sleep(1) # Pausa pequena antes de reiniciar o ciclo
+
+        except KeyboardInterrupt:
+            print("\nBot interrompido pelo usuário!")
+            break
+        except Exception as e:
+            print(f"Erro durante o ciclo {contador}: {e}")
+            print("Tentando novamente em 3 segundos...")
+            time.sleep(3)
 
 if __name__ == "__main__":
     try:
