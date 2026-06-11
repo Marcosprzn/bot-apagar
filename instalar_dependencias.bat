@@ -1,174 +1,143 @@
 @echo off
-setlocal enabledelayedexpansion
+title Instalador Bot MEGA ERP
+color 0A
+
+echo.
 echo ===================================================
-echo   Instalador de Dependencias - Bot MEGA ERP
+echo    INSTALADOR - Bot MEGA ERP
 echo ===================================================
 echo.
 
-:: -------------------------------------------------------
-:: 1. DETECTAR ARQUITETURA
-:: -------------------------------------------------------
-echo Verificando arquitetura do sistema...
-if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    set "ARCH=64"
+REM ====================================================
+REM PASSO 1: Detectar arquitetura 32 ou 64 bits
+REM ====================================================
+echo [1/4] Verificando arquitetura do sistema...
+
+if exist "%ProgramFiles(x86)%" (
+    echo     -> Windows 64-bit detectado.
     set "PYTHON_URL=https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
-    echo Sistema 64-bit detectado.
-) else if /i "%PROCESSOR_ARCHITEW6432%"=="AMD64" (
-    set "ARCH=64"
-    set "PYTHON_URL=https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
-    echo Sistema 64-bit detectado (processo 32-bit).
 ) else (
-    set "ARCH=32"
+    echo     -> Windows 32-bit detectado.
     set "PYTHON_URL=https://www.python.org/ftp/python/3.11.8/python-3.11.8.exe"
-    echo Sistema 32-bit detectado.
 )
 
-set "INSTALLER=%TEMP%\python-installer.exe"
-
-:: -------------------------------------------------------
-:: 2. VERIFICAR SE PYTHON JA ESTA INSTALADO
-:: -------------------------------------------------------
 echo.
-echo Verificando se o Python ja esta instalado...
 
-:: Caminho padrao onde o Python e instalado para o usuario atual
-set "PYTHON_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
-set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
-set "PIP_EXE=%PYTHON_DIR%\Scripts\pip.exe"
+REM ====================================================
+REM PASSO 2: Verificar se Python já está instalado
+REM ====================================================
+echo [2/4] Verificando se o Python ja esta instalado...
 
-if exist "%PYTHON_EXE%" (
-    echo Python ja encontrado em: %PYTHON_EXE%
-    goto add_to_path
-)
-
-:: Verifica tambem via comando (caso esteja em outro diretorio no PATH)
 python --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Python ja esta no PATH do sistema.
-    for /f "tokens=*" %%i in ('where python') do set "PYTHON_EXE=%%i"
-    goto install_libs
+    echo     -> Python ja esta instalado, pulando download.
+    goto :instalar_libs
 )
 
-:: -------------------------------------------------------
-:: 3. BAIXAR E INSTALAR PYTHON
-:: -------------------------------------------------------
-echo Python nao encontrado. Iniciando download...
-echo URL: %PYTHON_URL%
-echo.
-curl -# -L -o "%INSTALLER%" "%PYTHON_URL%"
-if %errorlevel% neq 0 (
-    echo ERRO: Falha no download. Verifique sua conexao com a internet.
-    pause
-    exit /b 1
+REM Verifica caminhos comuns antes de baixar
+if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+    echo     -> Python encontrado localmente, adicionando ao PATH...
+    goto :add_path
 )
 
+echo     -> Python nao encontrado. Iniciando download...
 echo.
-echo Instalando Python 3.11 (modo silencioso)...
-echo Isso pode demorar alguns minutos, aguarde...
 
-:: Instalacao silenciosa:
-::   InstallAllUsers=0  -> instala apenas para o usuario atual (nao precisa de admin)
-::   PrependPath=1      -> adiciona ao PATH automaticamente
-::   Include_pip=1      -> instala o pip
-::   Include_test=0     -> nao instala modulos de teste (mais rapido)
-::   Include_launcher=1 -> instala o launcher 'py'
-"%INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_test=0 Include_launcher=1
+REM ====================================================
+REM PASSO 3: Baixar Python via PowerShell (funciona em
+REM          qualquer Windows sem depender do curl)
+REM ====================================================
+echo [3/4] Baixando o Python 3.11.8...
+echo     URL: %PYTHON_URL%
+echo     Aguarde, isso pode demorar alguns minutos...
+echo.
 
-if %errorlevel% neq 0 (
-    echo ERRO: A instalacao do Python falhou. Tente executar como Administrador.
-    del "%INSTALLER%" >nul 2>&1
-    pause
-    exit /b 1
+powershell -Command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\python_install.exe' -UseBasicParsing }"
+
+if not exist "%TEMP%\python_install.exe" (
+    echo.
+    echo     ERRO: O download falhou. Verifique sua conexao.
+    echo     Tente baixar manualmente em: https://www.python.org/downloads/
+    echo.
+    goto :fim_erro
 )
 
-del "%INSTALLER%" >nul 2>&1
-echo Instalacao do Python concluida!
-
-:: -------------------------------------------------------
-:: 4. ADICIONAR AO PATH DA SESSAO ATUAL
-:: (o instalador adicionou ao PATH permanente, mas a sessao
-::  atual do CMD ainda nao enxerga - precisamos atualizar manualmente)
-:: -------------------------------------------------------
-:add_to_path
+echo     Download concluido! Instalando...
 echo.
-echo Configurando PATH para esta sessao...
 
-set "PYTHON_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
-set "PYTHON_SCRIPTS=%PYTHON_DIR%\Scripts"
-set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
-set "PIP_EXE=%PYTHON_SCRIPTS%\pip.exe"
+REM Instalacao silenciosa com PATH
+REM PrependPath=1 = adiciona ao PATH do Windows automaticamente
+"%TEMP%\python_install.exe" /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_test=0
 
-:: Adiciona ao PATH desta sessao
-set "PATH=%PYTHON_DIR%;%PYTHON_SCRIPTS%;%PATH%"
+echo     Instalacao concluida!
+del "%TEMP%\python_install.exe" >nul 2>&1
 
-:: Verifica se o python agora esta acessivel
-if not exist "%PYTHON_EXE%" (
-    echo AVISO: Python nao encontrado em %PYTHON_DIR%
-    echo Tentando localizar em outros locais comuns...
+REM ====================================================
+REM Adicionar Python ao PATH desta sessao
+REM (o instalador ja adicionou permanentemente,
+REM  mas precisamos atualizar a sessao atual do CMD)
+REM ====================================================
+:add_path
+echo.
+echo     Atualizando PATH desta sessao...
+set "PY_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
+set "PY_SCRIPTS=%PY_DIR%\Scripts"
+set "PATH=%PY_DIR%;%PY_SCRIPTS%;%PATH%"
 
-    :: Tenta encontrar em Program Files (instalacao para todos os usuarios)
-    if exist "C:\Program Files\Python311\python.exe" (
-        set "PYTHON_EXE=C:\Program Files\Python311\python.exe"
-        set "PIP_EXE=C:\Program Files\Python311\Scripts\pip.exe"
-        set "PATH=C:\Program Files\Python311;C:\Program Files\Python311\Scripts;%PATH%"
-        echo Encontrado em: C:\Program Files\Python311
-    ) else (
-        echo ERRO: Nao foi possivel localizar o Python instalado.
-        echo Por favor, abra um novo CMD e execute: pip install pywinauto
-        pause
-        exit /b 1
-    )
+REM Adiciona permanentemente ao PATH do usuario com setx
+setx PATH "%PY_DIR%;%PY_SCRIPTS%;%PATH%" >nul 2>&1
+
+echo     PATH atualizado!
+
+REM ====================================================
+REM PASSO 4: Instalar bibliotecas
+REM ====================================================
+:instalar_libs
+echo.
+echo [4/4] Instalando bibliotecas necessarias...
+echo.
+
+REM Tenta com python direto da sessao atual
+set "PY_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
+if exist "%PY_DIR%\python.exe" (
+    set "PYTHON_EXE=%PY_DIR%\python.exe"
+) else (
+    set "PYTHON_EXE=python"
 )
 
-:: -------------------------------------------------------
-:: 5. INSTALAR BIBLIOTECAS
-:: -------------------------------------------------------
-:install_libs
-echo.
-echo -------------------------------------------------------
-echo Instalando bibliotecas necessarias...
-echo -------------------------------------------------------
+echo     Atualizando pip...
+"%PYTHON_EXE%" -m pip install --upgrade pip --quiet
 
-"%PYTHON_EXE%" -m pip install --upgrade pip
-if %errorlevel% neq 0 (
-    echo AVISO: Falha ao atualizar o pip, tentando continuar...
-)
-
-echo.
-echo Instalando pywinauto...
+echo     Instalando pywinauto...
 "%PYTHON_EXE%" -m pip install pywinauto
-if %errorlevel% neq 0 (
-    echo ERRO: Falha ao instalar pywinauto.
-    pause
-    exit /b 1
-)
 
-:: Instala tambem o comtypes que o pywinauto usa com backend uia
-echo.
-echo Instalando comtypes (dependencia do pywinauto/uia)...
+echo     Instalando comtypes (necessario para o backend uia)...
 "%PYTHON_EXE%" -m pip install comtypes
-if %errorlevel% neq 0 (
-    echo AVISO: Falha ao instalar comtypes, pode nao ser necessario.
-)
 
-:: -------------------------------------------------------
-:: 6. VERIFICACAO FINAL
-:: -------------------------------------------------------
 echo.
-echo -------------------------------------------------------
-echo Verificando instalacao...
-"%PYTHON_EXE%" -c "import pywinauto; print('pywinauto OK - versao:', pywinauto.__version__)"
+echo     Verificando instalacao...
+"%PYTHON_EXE%" -c "import pywinauto; print('pywinauto instalado com sucesso! Versao:', pywinauto.__version__)"
+
 if %errorlevel% equ 0 (
     echo.
     echo ===================================================
-    echo   TUDO PRONTO! Dependencias instaladas com sucesso.
-    echo   Voce ja pode executar o bot.py normalmente.
+    echo    TUDO PRONTO! Pode fechar e executar o bot.py
     echo ===================================================
+    goto :fim_ok
 ) else (
     echo.
-    echo ERRO: A verificacao falhou. Tente reiniciar o computador
-    echo e executar este script novamente.
+    echo    ATENCAO: Houve um problema. Reinicie o PC e
+    echo    tente executar este arquivo novamente.
+    goto :fim_erro
 )
 
+:fim_ok
 echo.
 pause
+exit /b 0
+
+:fim_erro
+echo.
+echo Pressione qualquer tecla para fechar...
+pause >nul
+exit /b 1
