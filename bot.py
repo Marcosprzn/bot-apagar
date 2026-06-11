@@ -72,87 +72,81 @@ def main():
         input("\nPressione ENTER para sair...")
         return
 
-    # Sistema de "Aprendizado" para deixar as próximas repetições muito mais rápidas!
-    # O MEGA ERP muda o AutomationId toda vez que abre, MAS durante a mesma sessão eles são fixos.
-    # Na 1ª vez ele busca devagar (por Título/Classe). Na 2ª vez ele lembra o ID e acha quase instantaneamente.
-    CACHE = {}
-
-    def get_elemento_rapido(nome_logico, parent, **kwargs):
-        # 1. Tenta achar rápido pelo cache (ID aprendido)
-        if nome_logico in CACHE:
-            try:
-                rapido = parent.child_window(auto_id=CACHE[nome_logico], control_type=kwargs.get("control_type", "Button"))
-                if rapido.exists(timeout=1):
-                    return rapido
-            except:
-                pass # Se falhar, cai na busca normal
-        
-        # 2. Busca normal, mais lenta (por title e class_name)
-        lento = parent.child_window(**kwargs)
-        lento.wait('exists', timeout=10) # Aguarda existir
-        
-        # 3. "Aprende" o AutomationId para a próxima repetição!
-        try:
-            CACHE[nome_logico] = lento.element_info.automation_id
-        except:
-            pass
-            
-        return lento
-
+    # =====================================================================
+    # ABORDAGEM POR COORDENADAS (FALLBACK) SOLICITADA PELO USUÁRIO
+    # =====================================================================
+    from pywinauto import mouse
+    
     contador = 1
-    print("\nIniciando o ciclo de exclusão...")
-    print("O bot vai APRENDER os botões na 1ª vez. Da 2ª em diante será super rápido!")
+    print("\nIniciando o ciclo de exclusão por coordenadas (X, Y)...")
+    print("IMPORTANTE: Não mova a janela do MEGA ERP e não use o mouse durante o processo!")
     print("Pressione CTRL+C no terminal para parar o bot a qualquer momento.\n")
 
     while True:
         print(f"=== APAGANDO REGISTRO {contador} ===")
         
         try:
-            # 1. Clicar no botão "Procurar"
-            botao_procurar = get_elemento_rapido("btn_procurar", janela_principal, title="Procurar", class_name="TMgBitBtn", control_type="Button")
-            botao_procurar.wait('ready', timeout=10)
-            botao_procurar.click_input()
-            time.sleep(1) # Espera a janela abrir internamente
+            # 1. Procurar (X:414 Y:149)
+            print("1. Clicando em Procurar...")
+            mouse.click(button='left', coords=(414, 149))
+            time.sleep(2)  # Aguarda a janela de busca abrir
 
-            # 2. Clicar no botão "Aplicar"
-            botao_aplicar = get_elemento_rapido("btn_aplicar", janela_principal, title="Aplicar", class_name="TMgBitBtn", control_type="Button")
-            botao_aplicar.wait('ready', timeout=10)
-            botao_aplicar.click_input()
-            time.sleep(1.5) # Espera a tabela atualizar
+            # 2. Aplicar (X:815 Y:644)
+            print("2. Clicando em Aplicar...")
+            mouse.click(button='left', coords=(815, 644))
+            time.sleep(3)  # Aguarda a tabela de resultados carregar
 
-            # 3. Interagir com a Tabela (clicando na primeira linha)
-            tabela = get_elemento_rapido("tabela_resultados", janela_principal, class_name="TcxGridSite", control_type="Pane")
-            tabela.wait('visible', timeout=10)
-            tabela.click_input(coords=(50, 30))
-            time.sleep(0.5)
+            # 3. Tabela (X:443 Y:242)
+            print("3. Clicando no 1º item da Tabela...")
+            mouse.click(button='left', coords=(443, 242))
+            time.sleep(1)
 
-            # 4. Clicar no botão "Selecionar"
-            botao_selecionar = get_elemento_rapido("btn_selecionar", janela_principal, title="Selecionar", class_name="TMgSpeedButton", control_type="Button")
-            botao_selecionar.wait('ready', timeout=5)
-            botao_selecionar.click_input()
-            time.sleep(1.5) # Espera voltar para o dashboard do Mega ERP
+            # 4. Selecionar (X:1021 Y:582)
+            print("4. Clicando em Selecionar...")
+            mouse.click(button='left', coords=(1021, 582))
+            time.sleep(2)  # Aguarda fechar a busca e carregar o registro no painel
+            
+            # ==========================================================
+            # VERIFICAÇÃO PARA NÃO FICAR EM LOOP INFINITO
+            # ==========================================================
+            # Se a tabela estava vazia, o clique no Selecionar não fez nada
+            # e não voltamos para o dashboard, ou voltamos mas não tem registro.
+            # Vamos verificar o elemento na posição do "Excluir" (X:1252 Y:144)
+            print("Verificando se o registro foi carregado...")
+            elem_excluir = desktop.from_point(1252, 144)
+            
+            # Verifica se realmente tem um botão "Excluir" nessa posição
+            if elem_excluir.window_text() != "Excluir":
+                print("-> O botão Excluir não foi encontrado na posição esperada.")
+                print("-> Isso significa que a tabela acabou ou a janela mudou.")
+                print("\nFIM DOS REGISTROS! Loop finalizado.")
+                break
+                
+            # Verifica se o botão Excluir está clicável/habilitado
+            if not elem_excluir.is_enabled():
+                print("-> O botão Excluir está desabilitado na tela.")
+                print("-> Nenhum registro foi selecionado da tabela (ela deve estar vazia).")
+                print("\nFIM DOS REGISTROS! Loop finalizado.")
+                break
 
-            # 5. Clicar no botão "Excluir"
-            botao_excluir = get_elemento_rapido("btn_excluir", janela_principal, title="Excluir", class_name="TMgSpeedButton", control_type="Button")
-            botao_excluir.wait('ready', timeout=10) # Garante que o botão está habilitado e visível
-            botao_excluir.click_input()
-            time.sleep(1) # Aguarda o popup de confirmação
+            # 5. Excluir (X:1252 Y:144)
+            print("5. Clicando em Excluir...")
+            mouse.click(button='left', coords=(1252, 144))
+            time.sleep(1)  # Aguarda o popup de Sim/Não
 
-            # 6. Clicar no botão "Sim" (Confirmação)
-            # Pode estar na janela_principal ou ser um popup top-level. Vamos tentar primeiro na janela_principal.
-            try:
-                botao_sim = get_elemento_rapido("btn_sim", janela_principal, title="Sim", class_name="TcxButton", control_type="Button")
-                botao_sim.wait('ready', timeout=5)
-                botao_sim.click_input()
-            except:
-                # Fallback: Se for uma janela popup isolada do sistema
-                botao_sim_desk = desktop.child_window(title="Sim", class_name="TcxButton", control_type="Button")
-                botao_sim_desk.wait('ready', timeout=5)
-                botao_sim_desk.click_input()
+            # Opcional: Verificando se o "Sim" abriu mesmo
+            elem_sim = desktop.from_point(684, 423)
+            if elem_sim.window_text() == "Sim":
+                print("6. Clicando em Sim...")
+                mouse.click(button='left', coords=(684, 423))
+            else:
+                print("Aviso: O botão Sim não estava na coordenada (684, 423). Tentando clicar mesmo assim...")
+                mouse.click(button='left', coords=(684, 423))
+                
+            time.sleep(2)  # Aguarda a exclusão concluir e a tela resetar
 
             print(f"Registro {contador} excluído com sucesso!\n")
             contador += 1
-            time.sleep(1) # Pausa pequena antes de reiniciar o ciclo
 
         except KeyboardInterrupt:
             print("\nBot interrompido pelo usuário!")
