@@ -98,28 +98,32 @@ def main():
         return
 
     # 2 e 3. Preencher campos de data
-    # ClassName: "TcxCustomDropDownInnerEdit" - ambos campos têm a mesma classe e sem título fixo.
-    # Estratégia: buscar todos e ordenar pela posição X (esquerda = data início, direita = data fim)
-    print("Buscando campos de data...")
+    # ClassName: "TcxCustomDropDownInnerEdit" - campos aninhados dentro de paineis.
+    # Usa descendants() para buscar em toda a hierarquia (nao apenas filhos diretos).
+    print("Buscando campos de data na janela...")
     try:
-        campos_data = janela_busca.children(class_name="TcxCustomDropDownInnerEdit")
+        campos_data = janela_busca.descendants(class_name="TcxCustomDropDownInnerEdit")
+        print(f"  Campos de data encontrados: {len(campos_data)}")
 
         if len(campos_data) < 2:
             print(f"  AVISO: Esperava 2 campos de data, encontrou {len(campos_data)}.")
+            for i, c in enumerate(campos_data):
+                print(f"    Campo {i}: rect={c.rectangle()}")
         else:
             # Ordena pela posição horizontal (rectangle().left)
+            # O campo mais à esquerda = data início, o mais à direita = data fim
             campos_data = sorted(campos_data, key=lambda c: c.rectangle().left)
 
             # Campo data início (mais à esquerda)
             print("Inserindo a primeira data (01/01/2026)...")
             campos_data[0].click_input()
-            campos_data[0].type_keys("^a01/01/2026", with_spaces=True)
+            campos_data[0].type_keys("^a01012026", with_spaces=False)
             time.sleep(0.5)
 
             # Campo data fim (mais à direita)
             print("Inserindo a segunda data (31/05/2026)...")
             campos_data[1].click_input()
-            campos_data[1].type_keys("^a31/05/2026", with_spaces=True)
+            campos_data[1].type_keys("^a31052026", with_spaces=False)
             time.sleep(0.5)
 
     except Exception as e:
