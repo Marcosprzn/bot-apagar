@@ -131,6 +131,26 @@ def main():
             mouse.click(button='left', coords=(815, 644))
             sleep_com_pausa(3)  # Aguarda a tabela de resultados carregar
 
+            # ==========================================================
+            # VERIFICAÇÃO DE FIM DOS REGISTROS (Lançamento não encontrado)
+            # ==========================================================
+            # Depois de Aplicar, se não houver mais registros, o MEGA mostra a mensagem
+            try:
+                msg_fim = desktop.child_window(title="Lançamento não encontrado.", control_type="Pane")
+                if msg_fim.exists(timeout=1):
+                    print("\n-> Mensagem 'Lançamento não encontrado.' detectada!")
+                    print("-> Todos os itens da tabela foram excluídos com sucesso.")
+                    print("\n=== FIM DA AUTOMAÇÃO! ===")
+                    
+                    # Clica no botão OK ou fechar da mensagem (tentativa de clicar no centro dela)
+                    try:
+                        msg_fim.click_input()
+                    except:
+                        pass
+                    break
+            except:
+                pass # Segue o jogo, significa que tem registros para apagar
+
             # 3. Tabela (X:443 Y:242)
             print("3. Clicando no 1º item da Tabela...")
             mouse.click(button='left', coords=(443, 242))
