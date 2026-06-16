@@ -12,9 +12,15 @@ from pywinauto import Desktop, mouse
 # ============================================================
 #  CONFIGURAÇÕES GLOBAIS
 # ============================================================
-IMAGEM_PARADA = None   # Caminho para a imagem de parada
-IMAGEM_TABELA = None   # Caminho para a imagem da tabela (pós-Aplicar)
-BOT_RODANDO   = False  # Flag para parar o loop
+IMAGEM_PARADA = None    # Caminho para a imagem de parada
+IMAGEM_TABELA = None    # Caminho para a imagem de referência (pós-Aplicar)
+BOT_RODANDO   = False   # Flag para parar o loop
+
+# Carrega automaticamente botao documento.jpeg como referência se existir
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_caminho_botao_doc = os.path.join(_script_dir, "botao documento.jpeg")
+if os.path.exists(_caminho_botao_doc):
+    IMAGEM_TABELA = _caminho_botao_doc
 
 # ============================================================
 #  UTILITÁRIOS
@@ -116,9 +122,9 @@ def executar_automacao():
     else:
         print("  Sem imagem de parada configurada.")
     if IMAGEM_TABELA:
-        print(f"  Imagem da tabela: {os.path.basename(IMAGEM_TABELA)}")
+        print(f"  Imagem referência: {os.path.basename(IMAGEM_TABELA)}")
     else:
-        print("  Sem imagem da tabela configurada.")
+        print("  Sem imagem de referência configurada.")
     linha()
     print("\nIniciando em 5 segundos... Prepare a tela do MEGA ERP!\n")
     time.sleep(5)
@@ -162,7 +168,7 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # Aguardar imagem da tabela (se configurada)
+            # Aguardar imagem de referência (se configurada)
             if IMAGEM_TABELA and os.path.exists(IMAGEM_TABELA):
                 print("  Aguardando tabela aparecer...")
                 box = aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20)
@@ -270,11 +276,11 @@ def selecionar_imagem_tabela():
     global IMAGEM_TABELA
     limpar_tela()
     linha()
-    print("  SELECIONAR IMAGEM DA TABELA")
+    print(    "  SELECIONAR IMAGEM DE REFERÊNCIA")
     linha()
     print()
-    print("  Essa imagem será usada para aguardar a tabela aparecer")
-    print("  após clicar em 'Aplicar', evitando cliques precoces.")
+    print("  O bot vai detectar essa imagem na tela e clicar 3px abaixo")
+    print("  (onde fica o 1º item da tabela). Use 'botao documento' ou similar.")
     print()
     print("  Abrindo o explorador de arquivos... (pode aparecer atrás desta janela)")
     print()
@@ -288,7 +294,7 @@ def selecionar_imagem_tabela():
         root.attributes('-topmost', True)
 
         caminho = filedialog.askopenfilename(
-            title="Selecione a imagem da tabela",
+            title="Selecione a imagem de referência",
             filetypes=[
                 ("Imagens", "*.png *.jpg *.jpeg *.bmp"),
                 ("Todos os arquivos", "*.*")
@@ -325,14 +331,14 @@ def dashboard():
         else:
             print("  Imagem de parada : Não configurada")
         if IMAGEM_TABELA:
-            print(f"  Imagem da tabela : {os.path.basename(IMAGEM_TABELA)}")
+            print(f"  Imagem ref. tabela: {os.path.basename(IMAGEM_TABELA)}")
         else:
-            print("  Imagem da tabela : Não configurada")
+            print("  Imagem ref. tabela: Não configurada")
         print()
         linha('-')
         print("  [ 1 ] Iniciar automação")
         print("  [ 2 ] Selecionar imagem de parada")
-        print("  [ 3 ] Selecionar imagem da tabela")
+        print("  [ 3 ] Selecionar imagem de referência")
         print("  [ 0 ] Sair")
         linha('-')
         print()
