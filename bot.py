@@ -13,6 +13,7 @@ from pywinauto import Desktop, mouse
 #  CONFIGURAÇÕES GLOBAIS
 # ============================================================
 IMAGEM_PARADA = None   # Caminho para a imagem de parada
+IMAGEM_TABELA = None   # Reservado para imagem de referência (não usado no momento)
 BOT_RODANDO   = False  # Flag para parar o loop
 
 # ============================================================
