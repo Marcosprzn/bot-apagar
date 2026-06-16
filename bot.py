@@ -53,7 +53,7 @@ def sleep_inteligente(segundos):
         # Verifica parada por imagem
         if IMAGEM_PARADA and os.path.exists(IMAGEM_PARADA):
             try:
-                encontrou = pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.85)
+                encontrou = pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.7, grayscale=True)
                 if encontrou:
                     BOT_RODANDO = False
                     print("\n[IMAGEM DE PARADA DETECTADA] Encerrando o bot...")
@@ -80,7 +80,7 @@ def sleep_inteligente(segundos):
 
         time.sleep(0.05)
 
-def aguardar_imagem_na_tela(caminho, timeout=15, confidence=0.85):
+def aguardar_imagem_na_tela(caminho, timeout=15, confidence=0.7, grayscale=True):
     """Aguarda até que uma imagem apareça na tela. Retorna (left, top, width, height) ou None."""
     global BOT_RODANDO
     inicio = time.time()
@@ -89,14 +89,14 @@ def aguardar_imagem_na_tela(caminho, timeout=15, confidence=0.85):
             return None
         if IMAGEM_PARADA and os.path.exists(IMAGEM_PARADA):
             try:
-                if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.85):
+                if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.7, grayscale=True):
                     BOT_RODANDO = False
                     print("\n[IMAGEM DE PARADA DETECTADA] Encerrando o bot...")
                     return None
             except:
                 pass
         try:
-            box = pyautogui.locateOnScreen(caminho, confidence=confidence)
+            box = pyautogui.locateOnScreen(caminho, confidence=confidence, grayscale=grayscale)
             if box:
                 return box
         except:
@@ -148,7 +148,7 @@ def executar_automacao():
             # --- Verificação de fim por imagem (logo após Aplicar) ---
             if IMAGEM_PARADA and os.path.exists(IMAGEM_PARADA):
                 try:
-                    if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.85):
+                    if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.7, grayscale=True):
                         print("\n[IMAGEM DE PARADA DETECTADA] Todos os registros foram excluídos!")
                         BOT_RODANDO = False
                         break
