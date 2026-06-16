@@ -13,6 +13,7 @@ from pywinauto import Desktop, mouse
 #  CONFIGURAÇÕES GLOBAIS
 # ============================================================
 IMAGEM_PARADA = None   # Caminho para a imagem de parada
+IMAGEM_TABELA = None   # Caminho para a imagem da tabela (pós-Aplicar)
 BOT_RODANDO   = False  # Flag para parar o loop
 
 # ============================================================
@@ -73,6 +74,30 @@ def sleep_inteligente(segundos):
 
         time.sleep(0.05)
 
+def aguardar_imagem_na_tela(caminho, timeout=15, confidence=0.85):
+    """Aguarda até que uma imagem apareça na tela. Retorna True se encontrou, False se timeout."""
+    global BOT_RODANDO
+    inicio = time.time()
+    while time.time() - inicio < timeout:
+        if not BOT_RODANDO:
+            return False
+        # Verifica parada por imagem durante a espera
+        if IMAGEM_PARADA and os.path.exists(IMAGEM_PARADA):
+            try:
+                if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.85):
+                    BOT_RODANDO = False
+                    print("\n[IMAGEM DE PARADA DETECTADA] Encerrando o bot...")
+                    return False
+            except:
+                pass
+        try:
+            if pyautogui.locateOnScreen(caminho, confidence=confidence):
+                return True
+        except:
+            pass
+        time.sleep(0.2)
+    return False
+
 # ============================================================
 #  LOOP PRINCIPAL DE AUTOMAÇÃO
 # ============================================================
@@ -90,6 +115,10 @@ def executar_automacao():
         print(f"  Imagem de parada: {os.path.basename(IMAGEM_PARADA)}")
     else:
         print("  Sem imagem de parada configurada.")
+    if IMAGEM_TABELA:
+        print(f"  Imagem da tabela: {os.path.basename(IMAGEM_TABELA)}")
+    else:
+        print("  Sem imagem da tabela configurada.")
     linha()
     print("\nIniciando em 5 segundos... Prepare a tela do MEGA ERP!\n")
     time.sleep(5)
@@ -132,6 +161,16 @@ def executar_automacao():
 
             if not BOT_RODANDO:
                 break
+
+            # Aguardar imagem da tabela (se configurada)
+            if IMAGEM_TABELA and os.path.exists(IMAGEM_TABELA):
+                print("  Aguardando tabela aparecer...")
+                if aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20):
+                    print("  Tabela detectada!")
+                else:
+                    print("  [AVISO] Tabela não detectada dentro do timeout. Continuando...")
+                if not BOT_RODANDO:
+                    break
 
             # 3. Clica na Tabela
             print("3. Clicando no 1º item da Tabela...")
@@ -219,6 +258,51 @@ def selecionar_imagem():
     input("  Pressione ENTER para voltar ao menu...")
 
 # ============================================================
+#  SELECIONAR IMAGEM DA TABELA
+# ============================================================
+def selecionar_imagem_tabela():
+    global IMAGEM_TABELA
+    limpar_tela()
+    linha()
+    print("  SELECIONAR IMAGEM DA TABELA")
+    linha()
+    print()
+    print("  Essa imagem será usada para aguardar a tabela aparecer")
+    print("  após clicar em 'Aplicar', evitando cliques precoces.")
+    print()
+    print("  Abrindo o explorador de arquivos... (pode aparecer atrás desta janela)")
+    print()
+
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+
+        caminho = filedialog.askopenfilename(
+            title="Selecione a imagem da tabela",
+            filetypes=[
+                ("Imagens", "*.png *.jpg *.jpeg *.bmp"),
+                ("Todos os arquivos", "*.*")
+            ]
+        )
+        root.destroy()
+
+        if caminho:
+            IMAGEM_TABELA = caminho
+            print(f"  [OK] Imagem da tabela configurada: {os.path.basename(caminho)}")
+        else:
+            print("  [CANCELADO] Nenhuma imagem selecionada.")
+
+    except Exception as e:
+        print(f"  [ERRO] Não foi possível abrir o explorador: {e}")
+
+    print()
+    input("  Pressione ENTER para voltar ao menu...")
+
+# ============================================================
 #  DASHBOARD PRINCIPAL
 # ============================================================
 def dashboard():
@@ -234,10 +318,15 @@ def dashboard():
             print(f"  Imagem de parada : {os.path.basename(IMAGEM_PARADA)}")
         else:
             print("  Imagem de parada : Não configurada")
+        if IMAGEM_TABELA:
+            print(f"  Imagem da tabela : {os.path.basename(IMAGEM_TABELA)}")
+        else:
+            print("  Imagem da tabela : Não configurada")
         print()
         linha('-')
         print("  [ 1 ] Iniciar automação")
         print("  [ 2 ] Selecionar imagem de parada")
+        print("  [ 3 ] Selecionar imagem da tabela")
         print("  [ 0 ] Sair")
         linha('-')
         print()
@@ -251,6 +340,9 @@ def dashboard():
 
         elif opcao == '2':
             selecionar_imagem()
+
+        elif opcao == '3':
+            selecionar_imagem_tabela()
 
         elif opcao == '0':
             limpar_tela()
