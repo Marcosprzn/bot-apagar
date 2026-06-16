@@ -12,17 +12,8 @@ from pywinauto import Desktop, mouse
 # ============================================================
 #  CONFIGURAÇÕES GLOBAIS
 # ============================================================
-IMAGEM_PARADA = None    # Caminho para a imagem de parada
-IMAGEM_TABELA = None    # Caminho para a imagem de referência (pós-Aplicar)
-BOT_RODANDO   = False   # Flag para parar o loop
-
-# Carrega automaticamente imagem de referência se existir (prioridade: movimento financeiro > botao documento)
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-for _nome in ["movimento financeiro.jpeg", "botao documento.jpeg"]:
-    _caminho = os.path.join(_script_dir, _nome)
-    if os.path.exists(_caminho):
-        IMAGEM_TABELA = _caminho
-        break
+IMAGEM_PARADA = None   # Caminho para a imagem de parada
+BOT_RODANDO   = False  # Flag para parar o loop
 
 # ============================================================
 #  UTILITÁRIOS
@@ -170,25 +161,20 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # Aguardar imagem de referência (se configurada)
-            if IMAGEM_TABELA and os.path.exists(IMAGEM_TABELA):
-                print("  Aguardando tabela aparecer...")
-                box = aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20)
-                if box:
-                    x = box.left + box.width // 2
-                    y = box.top + box.height + 30
-                    print(f"  Referência detectada em ({box.left}, {box.top}), clicando 30px abaixo...")
-                else:
-                    print("  [AVISO] Tabela não detectada dentro do timeout. Usando coordenada fixa...")
-                    x, y = 367, 244
-                if not BOT_RODANDO:
-                    break
-            else:
-                x, y = 367, 244
+            # Aguarda o diálogo "Procurar Movimento Financeiro" fechar (tabela carregada)
+            print("  Aguardando tabela carregar...")
+            try:
+                dialogo = desktop.window(title_re="Procurar Movimento Financeiro.*", control_type="Window")
+                dialogo.wait_not('visible', timeout=20)
+                print("  Tabela carregada!")
+            except:
+                print("  [AVISO] Timeout aguardando tabela. Tentando mesmo assim...")
+            if not BOT_RODANDO:
+                break
 
             # 3. Clica na Tabela
-            print(f"3. Clicando no 1º item da Tabela em ({x}, {y})...")
-            mouse.click(button='left', coords=(x, y))
+            print("3. Clicando no 1º item da Tabela...")
+            mouse.click(button='left', coords=(367, 244))
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
