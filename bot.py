@@ -16,11 +16,13 @@ IMAGEM_PARADA = None    # Caminho para a imagem de parada
 IMAGEM_TABELA = None    # Caminho para a imagem de referência (pós-Aplicar)
 BOT_RODANDO   = False   # Flag para parar o loop
 
-# Carrega automaticamente botao documento.jpeg como referência se existir
+# Carrega automaticamente imagem de referência se existir (prioridade: movimento financeiro > botao documento)
 _script_dir = os.path.dirname(os.path.abspath(__file__))
-_caminho_botao_doc = os.path.join(_script_dir, "botao documento.jpeg")
-if os.path.exists(_caminho_botao_doc):
-    IMAGEM_TABELA = _caminho_botao_doc
+for _nome in ["movimento financeiro.jpeg", "botao documento.jpeg"]:
+    _caminho = os.path.join(_script_dir, _nome)
+    if os.path.exists(_caminho):
+        IMAGEM_TABELA = _caminho
+        break
 
 # ============================================================
 #  UTILITÁRIOS
@@ -174,8 +176,8 @@ def executar_automacao():
                 box = aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20)
                 if box:
                     x = box.left + box.width // 2
-                    y = box.top + box.height + 3
-                    print(f"  Tabela detectada em ({box.left}, {box.top}), clicando 3px abaixo...")
+                    y = box.top + box.height + 30
+                    print(f"  Referência detectada em ({box.left}, {box.top}), clicando 30px abaixo...")
                 else:
                     print("  [AVISO] Tabela não detectada dentro do timeout. Usando coordenada fixa...")
                     x, y = 367, 244
