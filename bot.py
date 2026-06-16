@@ -75,28 +75,28 @@ def sleep_inteligente(segundos):
         time.sleep(0.05)
 
 def aguardar_imagem_na_tela(caminho, timeout=15, confidence=0.85):
-    """Aguarda até que uma imagem apareça na tela. Retorna True se encontrou, False se timeout."""
+    """Aguarda até que uma imagem apareça na tela. Retorna (left, top, width, height) ou None."""
     global BOT_RODANDO
     inicio = time.time()
     while time.time() - inicio < timeout:
         if not BOT_RODANDO:
-            return False
-        # Verifica parada por imagem durante a espera
+            return None
         if IMAGEM_PARADA and os.path.exists(IMAGEM_PARADA):
             try:
                 if pyautogui.locateOnScreen(IMAGEM_PARADA, confidence=0.85):
                     BOT_RODANDO = False
                     print("\n[IMAGEM DE PARADA DETECTADA] Encerrando o bot...")
-                    return False
+                    return None
             except:
                 pass
         try:
-            if pyautogui.locateOnScreen(caminho, confidence=confidence):
-                return True
+            box = pyautogui.locateOnScreen(caminho, confidence=confidence)
+            if box:
+                return box
         except:
             pass
         time.sleep(0.2)
-    return False
+    return None
 
 # ============================================================
 #  LOOP PRINCIPAL DE AUTOMAÇÃO
@@ -165,16 +165,22 @@ def executar_automacao():
             # Aguardar imagem da tabela (se configurada)
             if IMAGEM_TABELA and os.path.exists(IMAGEM_TABELA):
                 print("  Aguardando tabela aparecer...")
-                if aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20):
-                    print("  Tabela detectada!")
+                box = aguardar_imagem_na_tela(IMAGEM_TABELA, timeout=20)
+                if box:
+                    x = box.left + box.width // 2
+                    y = box.top + box.height + 3
+                    print(f"  Tabela detectada em ({box.left}, {box.top}), clicando 3px abaixo...")
                 else:
-                    print("  [AVISO] Tabela não detectada dentro do timeout. Continuando...")
+                    print("  [AVISO] Tabela não detectada dentro do timeout. Usando coordenada fixa...")
+                    x, y = 367, 244
                 if not BOT_RODANDO:
                     break
+            else:
+                x, y = 367, 244
 
             # 3. Clica na Tabela
-            print("3. Clicando no 1º item da Tabela...")
-            mouse.click(button='left', coords=(367, 244))
+            print(f"3. Clicando no 1º item da Tabela em ({x}, {y})...")
+            mouse.click(button='left', coords=(x, y))
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
