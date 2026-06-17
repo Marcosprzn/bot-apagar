@@ -14,7 +14,6 @@ from pywinauto import Desktop, mouse
 IMAGEM_PARADA        = None              # Caminho para a imagem de parada (definido via Menu)
 IMAGEM_PROCURAR      = "Procurar.PNG"    # Imagem do botão Procurar
 IMAGEM_APLICAR       = "Aplicar.PNG"     # Imagem do botão Aplicar
-IMAGEM_AGENTE        = "agente.PNG"      # Imagem do campo Agente
 IMAGEM_SELECIONAR    = "selecionar.PNG"  # Imagem do botão Selecionar
 IMAGEM_EXCLUIR       = "excluir.PNG"     # Imagem do botão Excluir
 IMAGEM_SIM           = "Sim.PNG"         # Imagem do botão Sim
@@ -251,13 +250,9 @@ def executar_automacao():
             clicar_por_imagem(IMAGEM_APLICAR, (815, 644), "Aplicar")
             time.sleep(0.8)  # tempo fixo rápido para aplicação
 
-            # --- Passo 2.5: Esperar aparecer o campo "Agente" e clicar 4 pixels abaixo ---
-            print("2.5 Aguardando carregamento do campo 'Agente'...")
-            if not esperar_e_clicar_deslocado(IMAGEM_AGENTE, 4, "Agente", timeout=12):
-                # Se der timeout, prossegue com segurança usando coordenadas aproximadas antigas da tabela
-                pass
-
-            sleep_inteligente(1)  # pausa curta para processar o clique
+            # Aguarda carregamento da tabela (sleep fixo + verificação de erro)
+            print("  Aguardando tabela carregar...")
+            sleep_inteligente(1.5)
             if not BOT_RODANDO:
                 break
 
