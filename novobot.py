@@ -106,10 +106,14 @@ def aguardar_janela_aparecer(desktop, title_re, timeout=5):
     """Espera janela com title_re aparecer. Retorna True se apareceu, False se timeout."""
     global BOT_RODANDO
     inicio = time.time()
+    ultima_verif_erro = 0
     while time.time() - inicio < timeout:
         if not BOT_RODANDO:
             return False
-        verificar_e_tratar_erro_servidor()
+        agora = time.time()
+        if agora - ultima_verif_erro > 1.0:
+            verificar_e_tratar_erro_servidor()
+            ultima_verif_erro = agora
         try:
             w = desktop.window(title_re=title_re)
             if w.exists(timeout=0.1):
@@ -123,10 +127,14 @@ def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
     """Espera janela com title_re desaparecer. Retorna True se desapareceu, False se timeout."""
     global BOT_RODANDO
     inicio = time.time()
+    ultima_verif_erro = 0
     while time.time() - inicio < timeout:
         if not BOT_RODANDO:
             return False
-        verificar_e_tratar_erro_servidor()
+        agora = time.time()
+        if agora - ultima_verif_erro > 1.0:
+            verificar_e_tratar_erro_servidor()
+            ultima_verif_erro = agora
         try:
             w = desktop.window(title_re=title_re)
             if not w.exists(timeout=0.1):
@@ -396,7 +404,7 @@ def selecionar_imagem():
             filetypes=[
                 ("Imagens", "*.png *.jpg *.jpeg *.bmp"),
                 ("Todos os arquivos", "*.*")
-            ]
+            ]para 
         )
         root.destroy()
 
