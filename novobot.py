@@ -116,45 +116,35 @@ def esperar_e_clicar_deslocado(caminho_imagem, offset_y, descricao, timeout=10, 
     return False
 
 def aguardar_janela_aparecer(desktop, title_re, timeout=5):
-    """Espera janela com title_re aparecer. Retorna True se apareceu, False se timeout."""
+    """Espera janela com title_re aparecer. Rápido, sem scan de tela."""
     global BOT_RODANDO
     inicio = time.time()
-    ultima_verif_erro = 0
     while time.time() - inicio < timeout:
         if not BOT_RODANDO:
             return False
-        agora = time.time()
-        if agora - ultima_verif_erro > 1.0:
-            verificar_e_tratar_erro_servidor()
-            ultima_verif_erro = agora
         try:
             w = desktop.window(title_re=title_re)
             if w.exists(timeout=0.1):
                 return True
         except:
             pass
-        time.sleep(0.1)
+        time.sleep(0.05)
     return False
 
 def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
-    """Espera janela com title_re desaparecer. Retorna True se desapareceu, False se timeout."""
+    """Espera janela com title_re desaparecer. Rápido, sem scan de tela."""
     global BOT_RODANDO
     inicio = time.time()
-    ultima_verif_erro = 0
     while time.time() - inicio < timeout:
         if not BOT_RODANDO:
             return False
-        agora = time.time()
-        if agora - ultima_verif_erro > 1.0:
-            verificar_e_tratar_erro_servidor()
-            ultima_verif_erro = agora
         try:
             w = desktop.window(title_re=title_re)
-            if not w.exists(timeout=0.1):
+            if not w.exists(timeout=0.05):
                 return True
         except:
             return True
-        time.sleep(0.1)
+        time.sleep(0.05)
     return False
 
 # ============================================================
@@ -293,9 +283,9 @@ def executar_automacao():
 
         print(f"=== APAGANDO REGISTRO {contador} ===")
         try:
-            # 1. Procurar (Por imagem ou fallback de coordenadas antigas)
-            print("1. Procurando e clicando em 'Procurar'...")
-            clicar_por_imagem(IMAGEM_PROCURAR, (414, 149), "Procurar")
+            # 1. Clica em Procurar (coordenada fixa)
+            print("1. Clicando em 'Procurar'...")
+            mouse.click(button='left', coords=(414, 149))
             # Espera a janela "Procurar Movimento Financeiro" aparecer
             if not aguardar_janela_aparecer(desktop, "Procurar Movimento.*", timeout=5):
                 print("  [Aviso] Timeout esperando janela Procurar, continuando...")
