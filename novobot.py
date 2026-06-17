@@ -404,7 +404,7 @@ def selecionar_imagem():
             filetypes=[
                 ("Imagens", "*.png *.jpg *.jpeg *.bmp"),
                 ("Todos os arquivos", "*.*")
-            ]para 
+            ]
         )
         root.destroy()
 
