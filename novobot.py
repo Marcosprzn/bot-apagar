@@ -286,21 +286,14 @@ def executar_automacao():
             # 1. Clica em Procurar (coordenada fixa)
             print("1. Clicando em 'Procurar'...")
             pyautogui.click(414, 149)
-            # Espera a janela "Procurar Movimento Financeiro" aparecer
-            if not aguardar_janela_aparecer(desktop, "Procurar Movimento.*", timeout=5):
-                print("  [Aviso] Timeout esperando janela Procurar, continuando...")
+            time.sleep(0.8)
             if not BOT_RODANDO:
                 break
 
             # 2. Aplicar (coordenada fixa)
             print("2. Clicando em 'Aplicar'...")
             pyautogui.click(815, 644)
-            time.sleep(0.5)
-
-            # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
-            print("  Aguardando tabela carregar (janela fechando)...")
-            if not aguardar_janela_desaparecer(desktop, "Procurar Movimento.*", timeout=10):
-                print("  [Aviso] Timeout esperando tabela, continuando...")
+            time.sleep(0.8)
             if not BOT_RODANDO:
                 break
 
@@ -361,9 +354,7 @@ def executar_automacao():
             # 6. Sim (Por imagem ou fallback de coordenadas antigas)
             print("6. Procurando e clicando em 'Sim'...")
             clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim")
-            # Espera a janela de confirmacao desaparecer + folga minima
-            aguardar_janela_desaparecer(desktop, "Confirmar", timeout=5)
-            sleep_inteligente(0.5)
+            sleep_inteligente(0.8)
 
             print(f"Registro {contador} excluído!\n")
             contador += 1
