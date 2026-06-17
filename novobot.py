@@ -354,9 +354,9 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # 4. Selecionar (Por imagem ou fallback de coordenadas antigas)
-            print("4. Procurando e clicando em 'Selecionar'...")
-            clicar_por_imagem(IMAGEM_SELECIONAR, (1021, 582), "Selecionar")
+            # 4. Selecionar (coordenada fixa direta)
+            print("4. Clicando em 'Selecionar'...")
+            mouse.click(button='left', coords=(1021, 582))
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
