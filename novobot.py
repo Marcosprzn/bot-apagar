@@ -293,7 +293,10 @@ def executar_automacao():
             # 2. Aplicar (coordenada fixa)
             print("2. Clicando em 'Aplicar'...")
             pyautogui.click(815, 644)
-            time.sleep(0.8)
+            time.sleep(0.3)
+            # Aguarda tabela carregar (1.2s com verificacao de erro)
+            print("  Aguardando tabela carregar...")
+            sleep_inteligente(1.2)
             if not BOT_RODANDO:
                 break
 
