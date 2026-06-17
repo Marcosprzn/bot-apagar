@@ -302,10 +302,10 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # 2. Aplicar (Por imagem ou fallback de coordenadas antigas)
-            print("2. Procurando e clicando em 'Aplicar'...")
-            clicar_por_imagem(IMAGEM_APLICAR, (815, 644), "Aplicar")
-            time.sleep(0.5)  # pausa minima para o clique registrar
+            # 2. Aplicar (coordenada fixa)
+            print("2. Clicando em 'Aplicar'...")
+            mouse.click(button='left', coords=(815, 644))
+            time.sleep(0.5)
 
             # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
             print("  Aguardando tabela carregar (janela fechando)...")
