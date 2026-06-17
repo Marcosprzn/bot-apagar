@@ -289,10 +289,19 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # 2. Aplicar (Por imagem ou fallback de coordenadas antigas)
+            # 2. Aplicar (por nome UIA ou fallback de coordenadas)
             print("2. Procurando e clicando em 'Aplicar'...")
-            clicar_por_imagem(IMAGEM_APLICAR, (815, 644), "Aplicar")
-            time.sleep(0.5)  # pausa minima para o clique registrar
+            try:
+                btn_aplicar = desktop.child_window(title="Aplicar", control_type="Button")
+                if btn_aplicar.exists(timeout=0.5):
+                    btn_aplicar.click_input()
+                    print("  [OK] Botão 'Aplicar' localizado via pywinauto.")
+                else:
+                    raise Exception("nao encontrado")
+            except:
+                pyautogui.click(815, 644)
+                print("  [Aviso] Botão 'Aplicar' usado coordenada fixa.")
+            time.sleep(0.5)
 
             # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
             print("  Aguardando tabela carregar (janela fechando)...")
