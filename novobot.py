@@ -6,7 +6,7 @@ import traceback
 import win32api
 import win32con
 import pyautogui
-from pywinauto import Desktop, mouse
+from pywinauto import Desktop
 
 # ============================================================
 #  CONFIGURAÇÕES GLOBAIS (Caminhos das imagens)
@@ -124,11 +124,11 @@ def aguardar_janela_aparecer(desktop, title_re, timeout=5):
             return False
         try:
             w = desktop.window(title_re=title_re)
-            if w.exists(timeout=0.1):
+            if w.exists(timeout=0.01):
                 return True
         except:
             pass
-        time.sleep(0.05)
+        time.sleep(0.02)
     return False
 
 def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
@@ -140,11 +140,11 @@ def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
             return False
         try:
             w = desktop.window(title_re=title_re)
-            if not w.exists(timeout=0.05):
+            if not w.exists(timeout=0.01):
                 return True
         except:
             return True
-        time.sleep(0.05)
+        time.sleep(0.02)
     return False
 
 # ============================================================
@@ -285,7 +285,7 @@ def executar_automacao():
         try:
             # 1. Clica em Procurar (coordenada fixa)
             print("1. Clicando em 'Procurar'...")
-            mouse.click(button='left', coords=(414, 149))
+            pyautogui.click(414, 149)
             # Espera a janela "Procurar Movimento Financeiro" aparecer
             if not aguardar_janela_aparecer(desktop, "Procurar Movimento.*", timeout=5):
                 print("  [Aviso] Timeout esperando janela Procurar, continuando...")
@@ -294,7 +294,7 @@ def executar_automacao():
 
             # 2. Aplicar (coordenada fixa)
             print("2. Clicando em 'Aplicar'...")
-            mouse.click(button='left', coords=(815, 644))
+            pyautogui.click(815, 644)
             time.sleep(0.5)
 
             # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
@@ -339,14 +339,14 @@ def executar_automacao():
 
             # 3. Clica na Tabela (Mantido coordenadas fixas para selecionar a linha do grid)
             print("3. Clicando no 1º item da Tabela...")
-            mouse.click(button='left', coords=(367, 244))
+            pyautogui.click(367, 244)
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 4. Selecionar (coordenada fixa direta)
             print("4. Clicando em 'Selecionar'...")
-            mouse.click(button='left', coords=(1021, 582))
+            pyautogui.click(1021, 582)
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
