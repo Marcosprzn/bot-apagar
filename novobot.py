@@ -102,6 +102,40 @@ def esperar_e_clicar_deslocado(caminho_imagem, offset_y, descricao, timeout=10, 
     print(f"  [Tempo Esgotado] Não foi possível localizar o campo '{descricao}' em {timeout} segundos.")
     return False
 
+def aguardar_janela_aparecer(desktop, title_re, timeout=5):
+    """Espera janela com title_re aparecer. Retorna True se apareceu, False se timeout."""
+    global BOT_RODANDO
+    inicio = time.time()
+    while time.time() - inicio < timeout:
+        if not BOT_RODANDO:
+            return False
+        verificar_e_tratar_erro_servidor()
+        try:
+            w = desktop.window(title_re=title_re)
+            if w.exists(timeout=0.1):
+                return True
+        except:
+            pass
+        time.sleep(0.1)
+    return False
+
+def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
+    """Espera janela com title_re desaparecer. Retorna True se desapareceu, False se timeout."""
+    global BOT_RODANDO
+    inicio = time.time()
+    while time.time() - inicio < timeout:
+        if not BOT_RODANDO:
+            return False
+        verificar_e_tratar_erro_servidor()
+        try:
+            w = desktop.window(title_re=title_re)
+            if not w.exists(timeout=0.1):
+                return True
+        except:
+            return True
+        time.sleep(0.1)
+    return False
+
 # ============================================================
 #  DETECÇÃO E TRATAMENTO SEGURO DE ERRO DE SERVIDOR (ORA-00060)
 # ============================================================
@@ -241,18 +275,21 @@ def executar_automacao():
             # 1. Procurar (Por imagem ou fallback de coordenadas antigas)
             print("1. Procurando e clicando em 'Procurar'...")
             clicar_por_imagem(IMAGEM_PROCURAR, (414, 149), "Procurar")
-            sleep_inteligente(2)
+            # Espera a janela "Procurar Movimento Financeiro" aparecer
+            if not aguardar_janela_aparecer(desktop, "Procurar Movimento.*", timeout=5):
+                print("  [Aviso] Timeout esperando janela Procurar, continuando...")
             if not BOT_RODANDO:
                 break
 
             # 2. Aplicar (Por imagem ou fallback de coordenadas antigas)
             print("2. Procurando e clicando em 'Aplicar'...")
             clicar_por_imagem(IMAGEM_APLICAR, (815, 644), "Aplicar")
-            time.sleep(0.8)  # tempo fixo rápido para aplicação
+            time.sleep(0.5)  # pausa minima para o clique registrar
 
-            # Aguarda carregamento da tabela (sleep fixo + verificação de erro)
-            print("  Aguardando tabela carregar...")
-            sleep_inteligente(1.5)
+            # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
+            print("  Aguardando tabela carregar (janela fechando)...")
+            if not aguardar_janela_desaparecer(desktop, "Procurar Movimento.*", timeout=10):
+                print("  [Aviso] Timeout esperando tabela, continuando...")
             if not BOT_RODANDO:
                 break
 
@@ -299,21 +336,23 @@ def executar_automacao():
             # 4. Selecionar (Por imagem ou fallback de coordenadas antigas)
             print("4. Procurando e clicando em 'Selecionar'...")
             clicar_por_imagem(IMAGEM_SELECIONAR, (1021, 582), "Selecionar")
-            sleep_inteligente(1.5)
+            sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 5. Excluir (Por imagem ou fallback de coordenadas antigas)
             print("5. Procurando e clicando em 'Excluir'...")
             clicar_por_imagem(IMAGEM_EXCLUIR, (1252, 144), "Excluir")
-            sleep_inteligente(1)
+            sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 6. Sim (Por imagem ou fallback de coordenadas antigas)
             print("6. Procurando e clicando em 'Sim'...")
             clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim")
-            sleep_inteligente(2)
+            # Espera a janela de confirmacao desaparecer + folga minima
+            aguardar_janela_desaparecer(desktop, "Confirmar", timeout=5)
+            sleep_inteligente(0.5)
 
             print(f"Registro {contador} excluído!\n")
             contador += 1
