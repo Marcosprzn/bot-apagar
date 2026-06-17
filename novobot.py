@@ -26,6 +26,9 @@ IMAGEM_LANCAMENTO_NAO_ENCONTRADO = "lançamento não encontrado.PNG"
 
 BOT_RODANDO   = False  # Flag para parar o loop
 
+# Cache de coordenadas: depois de encontrar um botão, guarda a posição pra clicar mais rapido
+CACHE_CLIQUE = {}
+
 # ============================================================
 #  UTILITÁRIOS
 # ============================================================
@@ -52,13 +55,23 @@ def clicar_por_imagem(caminho_imagem, coords_fallback, descricao, confidence=0.7
     """
     Tenta localizar a imagem na tela e clicar no centro dela.
     Caso não encontre ou o arquivo não exista, realiza o clique nas coordenadas de fallback.
+    Usa cache para evitar scan repetido.
     """
+    global CACHE_CLIQUE
+    # Verifica cache primeiro
+    if caminho_imagem in CACHE_CLIQUE:
+        x, y = CACHE_CLIQUE[caminho_imagem]
+        pyautogui.click(x, y)
+        print(f"  [Cache] Clicou em '{descricao}' via cache ({x}, {y}).")
+        return True
     if os.path.exists(caminho_imagem):
         try:
             ponto = pyautogui.locateCenterOnScreen(caminho_imagem, confidence=confidence, grayscale=grayscale)
             if ponto:
-                pyautogui.click(int(ponto[0]), int(ponto[1]))
-                print(f"  [OK] Clicou no botão '{descricao}' localizado via imagem.")
+                x, y = int(ponto[0]), int(ponto[1])
+                CACHE_CLIQUE[caminho_imagem] = (x, y)
+                pyautogui.click(x, y)
+                print(f"  [OK] Clicou no botão '{descricao}' localizado via imagem ({x}, {y}).")
                 return True
         except Exception as e:
             pass
@@ -289,19 +302,10 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # 2. Aplicar (por nome UIA ou fallback de coordenadas)
+            # 2. Aplicar (Por imagem ou fallback de coordenadas antigas)
             print("2. Procurando e clicando em 'Aplicar'...")
-            try:
-                btn_aplicar = desktop.child_window(title="Aplicar", control_type="Button")
-                if btn_aplicar.exists(timeout=0.5):
-                    btn_aplicar.click_input()
-                    print("  [OK] Botão 'Aplicar' localizado via pywinauto.")
-                else:
-                    raise Exception("nao encontrado")
-            except:
-                pyautogui.click(815, 644)
-                print("  [Aviso] Botão 'Aplicar' usado coordenada fixa.")
-            time.sleep(0.5)
+            clicar_por_imagem(IMAGEM_APLICAR, (815, 644), "Aplicar")
+            time.sleep(0.5)  # pausa minima para o clique registrar
 
             # Aguarda a janela "Procurar Movimento" fechar (tabela carregada)
             print("  Aguardando tabela carregar (janela fechando)...")
