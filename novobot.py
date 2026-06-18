@@ -152,8 +152,7 @@ def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
 # ============================================================
 def verificar_e_tratar_erro_servidor():
     """
-    Verificação robusta em tres camadas (Imagem + Janela Confirmar + Popup Generico)
-    para detectar qualquer erro/popup com botao 'Sim' e clicar automaticamente.
+    Verificação em 4 camadas para detectar popups de erro com botao 'Sim'.
     """
     global BOT_RODANDO
     if not BOT_RODANDO:
@@ -162,15 +161,12 @@ def verificar_e_tratar_erro_servidor():
     # --- CAMADA 1: DETECÇÃO POR VISÃO COMPUTACIONAL (IMAGEM) ---
     if os.path.exists(IMAGEM_ERRO_SERVIDOR):
         try:
-            # Varre a tela procurando o padrão do erro
             detectou = pyautogui.locateOnScreen(IMAGEM_ERRO_SERVIDOR, confidence=0.65, grayscale=True)
             if detectou:
                 print("\n" + "!"*60)
                 print("  [ALERTA] ERRO DETECTADO VIA IMAGEM!")
                 print("!"*60)
                 time.sleep(0.5)
-                
-                # Clica no botão Sim para fechar
                 if clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim (Recuperação de Erro)"):
                     print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
                     time.sleep(3.0)
@@ -178,28 +174,43 @@ def verificar_e_tratar_erro_servidor():
         except Exception as e:
             pass
 
-    # --- CAMADA 2: DETECÇÃO DIRETA POR APIS DO WINDOWS (PYWINAUTO - FALLBACK SEGURO) ---
+    # --- CAMADA 2: DETECÇÃO ESPECÍFICA POR CLASSE TFormMessageDlg (ORA-00060) ---
+    try:
+        desk = Desktop(backend="uia")
+        janela_erro = desk.window(class_name="TFormMessageDlg")
+        if janela_erro.exists(timeout=0.02):
+            print("\n" + "!"*60)
+            print("  [ALERTA] ERRO ORA-00060 DETECTADO (TFormMessageDlg)!")
+            print("!"*60)
+            time.sleep(0.5)
+            botao_sim = janela_erro.child_window(title="Sim", control_type="Button")
+            if botao_sim.exists():
+                botao_sim.click_input()
+                print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
+                time.sleep(3.0)
+                return True
+    except Exception as e:
+        pass
+
+    # --- CAMADA 3: DETECÇÃO DE JANELA "CONFIRMAR" ---
     try:
         desktop = Desktop(backend="uia")
-        # Procura por uma janela ativa com título "Confirmar"
         janela_confirmar = desktop.window(title="Confirmar")
         if janela_confirmar.exists(timeout=0.05):
             print("\n" + "!"*60)
             print("  [ALERTA] JANELA 'CONFIRMAR' DETECTADA!")
             print("!"*60)
             time.sleep(0.5)
-            
-            # Localiza e clica no botão "Sim" físico do pop-up
             botao_sim = janela_confirmar.child_window(title="Sim", control_type="Button")
             if botao_sim.exists():
                 botao_sim.click_input()
-                print("  [Sucesso] Botão Sim clicado via Windows API! Retomando em 3 segundos...")
+                print("  [Sucesso] Popup fechado! Retomando em 3 segundos...")
                 time.sleep(3.0)
                 return True
     except Exception as e:
         pass
 
-    # --- CAMADA 3: DETECÇÃO DE QUALQUER POPUP COM BOTÃO SIM (TcxButton, TPanel) ---
+    # --- CAMADA 4: DETECÇÃO DE QUALQUER POPUP COM BOTÃO SIM FORA DA POSIÇÃO NORMAL ---
     try:
         desk = Desktop(backend="uia")
         btn_sim = desk.child_window(title="Sim", control_type="Button")
@@ -207,7 +218,6 @@ def verificar_e_tratar_erro_servidor():
             rect = btn_sim.rectangle()
             cx = (rect.left + rect.right) // 2
             cy = (rect.top + rect.bottom) // 2
-            # Se NÃO for o Sim da confirmação normal (~684, 423), é erro
             if abs(cx - 684) > 30 or abs(cy - 423) > 30:
                 print("\n" + "!"*60)
                 print(f"  [ALERTA] POPUP COM SIM DETECTADO em ({cx}, {cy})!")
@@ -228,15 +238,15 @@ def sleep_inteligente(segundos):
     global BOT_RODANDO, IMAGEM_PARADA
     pausado = False
     inicio  = time.time()
-    ultima_verificacao_erro = 0  # throttle: checa erro no max 1x por segundo
+    ultima_verificacao_erro = 0  # throttle: checa erro no max 2x por segundo
 
     while time.time() - inicio < segundos:
         if not BOT_RODANDO:
             return
 
-        # Verifica erro de servidor com throttle (1x por segundo)
+        # Verifica erro de servidor com throttle (2x por segundo)
         agora = time.time()
-        if agora - ultima_verificacao_erro > 1.0:
+        if agora - ultima_verificacao_erro > 0.5:
             verificar_e_tratar_erro_servidor()
             ultima_verificacao_erro = agora
 
@@ -301,14 +311,14 @@ def executar_automacao():
             # 1. Clica em Procurar (coordenada fixa)
             print("1. Clicando em 'Procurar'...")
             pyautogui.click(414, 149)
-            time.sleep(0.8)
+            sleep_inteligente(0.8)
             if not BOT_RODANDO:
                 break
 
             # 2. Aplicar (coordenada fixa)
             print("2. Clicando em 'Aplicar'...")
             pyautogui.click(815, 644)
-            time.sleep(0.3)
+            sleep_inteligente(0.3)
             # Aguarda tabela carregar (1.2s com verificacao de erro)
             print("  Aguardando tabela carregar...")
             sleep_inteligente(1.2)
