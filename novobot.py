@@ -152,13 +152,13 @@ def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
 # ============================================================
 def verificar_e_tratar_erro_servidor():
     """
-    Verificação em 4 camadas para detectar popups de erro com botao 'Sim'.
+    Verificação em 6 camadas para detectar popups de erro com botao 'Sim'.
     """
     global BOT_RODANDO
     if not BOT_RODANDO:
         return False
 
-    # --- CAMADA 1: DETECÇÃO POR VISÃO COMPUTACIONAL (IMAGEM) ---
+    # --- CAMADA 1: IMAGEM ---
     if os.path.exists(IMAGEM_ERRO_SERVIDOR):
         try:
             detectou = pyautogui.locateOnScreen(IMAGEM_ERRO_SERVIDOR, confidence=0.65, grayscale=True)
@@ -174,17 +174,17 @@ def verificar_e_tratar_erro_servidor():
         except Exception as e:
             pass
 
-    # --- CAMADA 2: DETECÇÃO ESPECÍFICA POR CLASSE TFormMessageDlg (ORA-00060) ---
+    # --- CAMADA 2: CLASSE TFormMessageDlg ---
     try:
         desk = Desktop(backend="uia")
-        janela_erro = desk.window(class_name="TFormMessageDlg")
-        if janela_erro.exists(timeout=0.02):
+        janela_erro = desk.child_window(class_name="TFormMessageDlg")
+        if janela_erro.exists(timeout=0.1):
             print("\n" + "!"*60)
             print("  [ALERTA] ERRO ORA-00060 DETECTADO (TFormMessageDlg)!")
             print("!"*60)
             time.sleep(0.5)
             botao_sim = janela_erro.child_window(title="Sim", control_type="Button")
-            if botao_sim.exists():
+            if botao_sim.exists(timeout=0.3):
                 botao_sim.click_input()
                 print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
                 time.sleep(3.0)
@@ -192,7 +192,33 @@ def verificar_e_tratar_erro_servidor():
     except Exception as e:
         pass
 
-    # --- CAMADA 3: DETECÇÃO DE JANELA "CONFIRMAR" ---
+    # --- CAMADA 3: TEXTO ORA-00060 NA TELA (UIA) ---
+    try:
+        desk = Desktop(backend="uia")
+        txt = desk.child_window(title_re=".*ORA-00060.*", control_type="Edit")
+        if not txt.exists(timeout=0.1):
+            txt = desk.child_window(title_re=".*ORA-00060.*", control_type="Text")
+        if txt.exists(timeout=0.1):
+            print("\n" + "!"*60)
+            print("  [ALERTA] TEXTO ORA-00060 ENCONTRADO VIA UIA!")
+            print("!"*60)
+            time.sleep(0.5)
+            parent = txt
+            for _ in range(5):
+                try:
+                    parent = parent.parent()
+                    btn = parent.child_window(title="Sim", control_type="Button")
+                    if btn.exists(timeout=0.1):
+                        btn.click_input()
+                        print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
+                        time.sleep(3.0)
+                        return True
+                except:
+                    pass
+    except Exception as e:
+        pass
+
+    # --- CAMADA 4: JANELA "CONFIRMAR" ---
     try:
         desktop = Desktop(backend="uia")
         janela_confirmar = desktop.window(title="Confirmar")
@@ -210,7 +236,7 @@ def verificar_e_tratar_erro_servidor():
     except Exception as e:
         pass
 
-    # --- CAMADA 4: DETECÇÃO DE QUALQUER POPUP COM BOTÃO SIM FORA DA POSIÇÃO NORMAL ---
+    # --- CAMADA 5: SIM FORA DA POSIÇÃO NORMAL ---
     try:
         desk = Desktop(backend="uia")
         btn_sim = desk.child_window(title="Sim", control_type="Button")
@@ -227,6 +253,27 @@ def verificar_e_tratar_erro_servidor():
                 time.sleep(3.0)
                 return True
     except Exception as e:
+        pass
+
+    # --- CAMADA 6: CLIQUE DIRETO NA POSIÇÃO CONHECIDA DO SIM DO ERRO ---
+    try:
+        import win32api, win32con
+        # Posicao aproximada do botao Sim no erro ORA-00060
+        x, y = 882, 422
+        # Verifica se ha um botao clicavel nessa posicao
+        elem = Desktop(backend="uia").from_point(x, y)
+        if elem and elem.window_text() == "Sim":
+            print("\n" + "!"*60)
+            print("  [ALERTA] SIM DO ERRO DETECTADO VIA POSICAO!")
+            print("!"*60)
+            win32api.SetCursorPos((x, y))
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
+            time.sleep(0.05)
+            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
+            print("  [Sucesso] Sim clicado via coordenada! Retomando em 3 segundos...")
+            time.sleep(3.0)
+            return True
+    except:
         pass
 
     return False
@@ -299,7 +346,7 @@ def executar_automacao():
         print("  Sem imagem de parada configurada.")
     linha()
     print("\nIniciando em 5 segundos... Prepare a tela do MEGA ERP!\n")
-    time.sleep(5)
+    sleep_inteligente(5)
 
     contador = 1
     while BOT_RODANDO:
