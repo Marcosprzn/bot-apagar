@@ -152,8 +152,8 @@ def aguardar_janela_desaparecer(desktop, title_re, timeout=5):
 # ============================================================
 def verificar_e_tratar_erro_servidor():
     """
-    Verificação robusta em duas camadas (Imagem + Estrutura de Janela) para detectar
-    o erro 'ORA-00060' de conflito de recursos do servidor e clicar em 'Sim' para continuar.
+    Verificação robusta em tres camadas (Imagem + Janela Confirmar + Popup Generico)
+    para detectar qualquer erro/popup com botao 'Sim' e clicar automaticamente.
     """
     global BOT_RODANDO
     if not BOT_RODANDO:
@@ -163,17 +163,16 @@ def verificar_e_tratar_erro_servidor():
     if os.path.exists(IMAGEM_ERRO_SERVIDOR):
         try:
             # Varre a tela procurando o padrão do erro
-            detectou = pyautogui.locateOnScreen(IMAGEM_ERRO_SERVIDOR, confidence=0.75, grayscale=True)
+            detectou = pyautogui.locateOnScreen(IMAGEM_ERRO_SERVIDOR, confidence=0.65, grayscale=True)
             if detectou:
                 print("\n" + "!"*60)
-                print("  [ALERTA] ERRO DE SERVIDOR DETECTADO VIA IMAGEM (ORA-00060)!")
-                print("  Pausando fluxo temporariamente para recuperação segura...")
+                print("  [ALERTA] ERRO DETECTADO VIA IMAGEM!")
                 print("!"*60)
-                time.sleep(1.0) # Estabilização
+                time.sleep(0.5)
                 
-                # Clica no botão Sim para retransmitir/gravar de novo
+                # Clica no botão Sim para fechar
                 if clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim (Recuperação de Erro)"):
-                    print("  [Sucesso] Erro de rede/banco contornado! Retomando em 3 segundos...")
+                    print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
                     time.sleep(3.0)
                     return True
         except Exception as e:
@@ -185,22 +184,38 @@ def verificar_e_tratar_erro_servidor():
         # Procura por uma janela ativa com título "Confirmar"
         janela_confirmar = desktop.window(title="Confirmar")
         if janela_confirmar.exists(timeout=0.05):
-            # Valida se é o erro específico procurando as strings críticas do ORA-00060 na estrutura do texto
-            texto_erro = janela_confirmar.child_window(title_re=".*ORA-00060.*|.*Servidor no momento.*", control_type="Text")
-            if texto_erro.exists(timeout=0.05):
+            print("\n" + "!"*60)
+            print("  [ALERTA] JANELA 'CONFIRMAR' DETECTADA!")
+            print("!"*60)
+            time.sleep(0.5)
+            
+            # Localiza e clica no botão "Sim" físico do pop-up
+            botao_sim = janela_confirmar.child_window(title="Sim", control_type="Button")
+            if botao_sim.exists():
+                botao_sim.click_input()
+                print("  [Sucesso] Botão Sim clicado via Windows API! Retomando em 3 segundos...")
+                time.sleep(3.0)
+                return True
+    except Exception as e:
+        pass
+
+    # --- CAMADA 3: DETECÇÃO DE QUALQUER POPUP COM BOTÃO SIM (TcxButton, TPanel) ---
+    try:
+        desk = Desktop(backend="uia")
+        btn_sim = desk.child_window(title="Sim", control_type="Button")
+        if btn_sim.exists(timeout=0.02):
+            rect = btn_sim.rectangle()
+            cx = (rect.left + rect.right) // 2
+            cy = (rect.top + rect.bottom) // 2
+            # Se NÃO for o Sim da confirmação normal (~684, 423), é erro
+            if abs(cx - 684) > 30 or abs(cy - 423) > 30:
                 print("\n" + "!"*60)
-                print("  [ALERTA] ERRO DE SERVIDOR DETECTADO VIA ESTRUTURA (ORA-00060)!")
-                print("  Recuperando sessão do banco de dados...")
+                print(f"  [ALERTA] POPUP COM SIM DETECTADO em ({cx}, {cy})!")
                 print("!"*60)
-                time.sleep(1.0)
-                
-                # Localiza e clica no botão "Sim" físico do pop-up
-                botao_sim = janela_confirmar.child_window(title="Sim", control_type="Button")
-                if botao_sim.exists():
-                    botao_sim.click_input()
-                    print("  [Sucesso] Botão Sim clicado via Windows API! Retomando em 3 segundos...")
-                    time.sleep(3.0)
-                    return True
+                btn_sim.click_input()
+                print("  [Sucesso] Popup fechado! Retomando em 3 segundos...")
+                time.sleep(3.0)
+                return True
     except Exception as e:
         pass
 
