@@ -25,6 +25,28 @@ IMAGEM_ERRO_SERVIDOR = "erro novo.jpeg"
 IMAGEM_LANCAMENTO_NAO_ENCONTRADO = "lançamento não encontrado.PNG"
 
 BOT_RODANDO   = False  # Flag para parar o loop
+COORDS_ATUAL  = None   # Coordenadas da automacao atual (usado pelo error handler)
+
+# ============================================================
+#  COORDENADAS DAS AUTOMAÇÕES
+# ============================================================
+AUTO1 = {
+    "procurar":   (414, 149),
+    "aplicar":    (815, 644),
+    "tabela":     (367, 244),
+    "selecionar": (1021, 582),
+    "excluir":    (1252, 144),
+    "sim":        (684, 423),
+}
+
+AUTO2 = {
+    "procurar":   (409, 147),
+    "aplicar":    (815, 627),
+    "tabela":     (692, 280),
+    "selecionar": (1034, 587),
+    "excluir":    (1248, 144),
+    "sim":        (771, 420),
+}
 
 # Cache de coordenadas: depois de encontrar um botão, guarda a posição pra clicar mais rapido
 CACHE_CLIQUE = {}
@@ -154,9 +176,11 @@ def verificar_e_tratar_erro_servidor():
     """
     Verificação em 6 camadas para detectar popups de erro com botao 'Sim'.
     """
-    global BOT_RODANDO
-    if not BOT_RODANDO:
+    global BOT_RODANDO, COORDS_ATUAL
+    if not BOT_RODANDO or not COORDS_ATUAL:
         return False
+
+    sim_x, sim_y = COORDS_ATUAL["sim"]
 
     # --- CAMADA 1: IMAGEM ---
     if os.path.exists(IMAGEM_ERRO_SERVIDOR):
@@ -167,7 +191,7 @@ def verificar_e_tratar_erro_servidor():
                 print("  [ALERTA] ERRO DETECTADO VIA IMAGEM!")
                 print("!"*60)
                 time.sleep(0.5)
-                if clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim (Recuperação de Erro)"):
+                if clicar_por_imagem(IMAGEM_SIM, (sim_x, sim_y), "Sim (Recuperação de Erro)"):
                     print("  [Sucesso] Erro contornado! Retomando em 3 segundos...")
                     time.sleep(3.0)
                     return True
@@ -244,7 +268,7 @@ def verificar_e_tratar_erro_servidor():
             rect = btn_sim.rectangle()
             cx = (rect.left + rect.right) // 2
             cy = (rect.top + rect.bottom) // 2
-            if abs(cx - 684) > 30 or abs(cy - 423) > 30:
+            if abs(cx - sim_x) > 30 or abs(cy - sim_y) > 30:
                 print("\n" + "!"*60)
                 print(f"  [ALERTA] POPUP COM SIM DETECTADO em ({cx}, {cy})!")
                 print("!"*60)
@@ -330,8 +354,9 @@ def sleep_inteligente(segundos):
 # ============================================================
 #  LOOP PRINCIPAL DE AUTOMAÇÃO
 # ============================================================
-def executar_automacao():
-    global BOT_RODANDO
+def executar_automacao(coords):
+    global BOT_RODANDO, COORDS_ATUAL
+    COORDS_ATUAL = coords
 
     desktop = Desktop(backend="uia")
     print()
@@ -350,23 +375,21 @@ def executar_automacao():
 
     contador = 1
     while BOT_RODANDO:
-        # Checagem extra de prevenção de erro no começo do loop
         verificar_e_tratar_erro_servidor()
 
         print(f"=== APAGANDO REGISTRO {contador} ===")
         try:
             # 1. Clica em Procurar (coordenada fixa)
             print("1. Clicando em 'Procurar'...")
-            pyautogui.click(414, 149)
+            pyautogui.click(*coords["procurar"])
             sleep_inteligente(0.8)
             if not BOT_RODANDO:
                 break
 
             # 2. Aplicar (coordenada fixa)
             print("2. Clicando em 'Aplicar'...")
-            pyautogui.click(815, 644)
+            pyautogui.click(*coords["aplicar"])
             sleep_inteligente(0.3)
-            # Aguarda tabela carregar (1.2s com verificacao de erro)
             print("  Aguardando tabela carregar...")
             sleep_inteligente(1.2)
             if not BOT_RODANDO:
@@ -405,30 +428,30 @@ def executar_automacao():
             if not BOT_RODANDO:
                 break
 
-            # 3. Clica na Tabela (Mantido coordenadas fixas para selecionar a linha do grid)
+            # 3. Clica na Tabela
             print("3. Clicando no 1º item da Tabela...")
-            pyautogui.click(367, 244)
+            pyautogui.click(*coords["tabela"])
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 4. Selecionar (coordenada fixa direta)
             print("4. Clicando em 'Selecionar'...")
-            pyautogui.click(1021, 582)
+            pyautogui.click(*coords["selecionar"])
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 5. Excluir (Por imagem ou fallback de coordenadas antigas)
             print("5. Procurando e clicando em 'Excluir'...")
-            clicar_por_imagem(IMAGEM_EXCLUIR, (1252, 144), "Excluir")
+            clicar_por_imagem(IMAGEM_EXCLUIR, coords["excluir"], "Excluir")
             sleep_inteligente(0.5)
             if not BOT_RODANDO:
                 break
 
             # 6. Sim (Por imagem ou fallback de coordenadas antigas)
             print("6. Procurando e clicando em 'Sim'...")
-            clicar_por_imagem(IMAGEM_SIM, (684, 423), "Sim")
+            clicar_por_imagem(IMAGEM_SIM, coords["sim"], "Sim")
             sleep_inteligente(0.8)
 
             print(f"Registro {contador} excluído!\n")
@@ -507,8 +530,9 @@ def dashboard():
             print("  Imagem de parada : Não configurada")
         print()
         linha('-')
-        print("  [ 1 ] Iniciar automação")
-        print("  [ 2 ] Selecionar imagem de parada")
+        print("  [ 1 ] Iniciar automação 1 (Mov. Financeiro)")
+        print("  [ 2 ] Iniciar automação 2 (Novo modelo)")
+        print("  [ 3 ] Selecionar imagem de parada")
         print("  [ 0 ] Sair")
         linha('-')
         print()
@@ -517,10 +541,15 @@ def dashboard():
 
         if opcao == '1':
             BOT_RODANDO = True
-            executar_automacao()
+            executar_automacao(AUTO1)
             input("\n  Pressione ENTER para voltar ao menu...")
 
         elif opcao == '2':
+            BOT_RODANDO = True
+            executar_automacao(AUTO2)
+            input("\n  Pressione ENTER para voltar ao menu...")
+
+        elif opcao == '3':
             selecionar_imagem()
 
         elif opcao == '0':
