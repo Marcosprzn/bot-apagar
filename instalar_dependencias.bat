@@ -122,6 +122,16 @@ echo   Instalando Pillow...
 if errorlevel 1 type "%PIP_LOG%"
 echo.
 
+echo   Instalando openpyxl (Excel)...
+"%PY_EXE%" -m pip install openpyxl >> "%PIP_LOG%" 2>&1
+if errorlevel 1 type "%PIP_LOG%"
+echo.
+
+echo   Instalando PyPDF2...
+"%PY_EXE%" -m pip install PyPDF2 >> "%PIP_LOG%" 2>&1
+if errorlevel 1 type "%PIP_LOG%"
+echo.
+
 echo   Verificando...
 "%PY_EXE%" -c "import pywinauto; import comtypes; import pyautogui; import PIL; print('OK!')"
 
