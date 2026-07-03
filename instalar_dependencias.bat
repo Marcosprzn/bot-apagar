@@ -11,7 +11,7 @@ echo.
 REM ====================================================
 REM PASSO 1: Detectar Windows 7 e arquitetura
 REM ====================================================
-echo [1/4] Verificando sistema operacional e arquitetura...
+echo [1/5] Verificando sistema operacional e arquitetura...
 
 REM Detecta Windows 7 (versao 6.1)
 set "WIN7="
@@ -41,7 +41,7 @@ echo.
 REM ====================================================
 REM PASSO 2: Verificar se Python já está instalado
 REM ====================================================
-echo [2/4] Verificando se o Python ja esta instalado...
+echo [2/5] Verificando se o Python ja esta instalado...
 
 python --version >nul 2>&1
 if %errorlevel% equ 0 (
@@ -59,9 +59,39 @@ echo     -> Python nao encontrado. Iniciando download...
 echo.
 
 REM ====================================================
+REM PASSO 2.5: Instalar KB3140245 (TLS 1.2) no Windows 7
+REM ====================================================
+if "%WIN7%"=="1" (
+    echo     Verificando atualizacao KB3140245 (TLS 1.2)...
+    wmic qfe list brief /format:texttable | find "KB3140245" >nul 2>&1
+    if errorlevel 1 (
+        echo     -> KB3140245 nao encontrado. Baixando e instalando...
+        if exist "%ProgramFiles(x86)%" (
+            set "KB_URL=http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x64_5b06703b4c64ccc2e4e6290c999d0f39623cf7c7.msu"
+        ) else (
+            set "KB_URL=http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x86_3bdf4f2c5b35607bbc1d0c539ce0d02bbadc2b34.msu"
+        )
+        bitsadmin /transfer "JobKB" "%KB_URL%" "%TEMP%\KB3140245.msu" >nul 2>&1
+        if exist "%TEMP%\KB3140245.msu" (
+            echo     -> Instalando KB3140245...
+            wusa "%TEMP%\KB3140245.msu" /quiet /norestart
+            echo     -> KB3140245 instalado! Uma reinicializacao e necessaria.
+            echo     -> Reinicie o PC e execute este instalador novamente.
+            goto :fim_reboot
+        ) else (
+            echo     -> [AVISO] Nao foi possivel baixar KB3140245.
+            echo     -> Baixe manualmente e instale, ou prossiga (pode falhar).
+        )
+    ) else (
+        echo     -> KB3140245 ja instalado.
+    )
+    echo.
+)
+
+REM ====================================================
 REM PASSO 3: Baixar Python
 REM ====================================================
-echo [3/4] Baixando o Python %PY_VER%...
+echo [3/5] Baixando o Python %PY_VER%...
 echo     URL: %PYTHON_URL%
 echo     Aguarde, isso pode demorar alguns minutos...
 echo.
@@ -127,7 +157,7 @@ REM PASSO 4: Instalar bibliotecas
 REM ====================================================
 :instalar_libs
 echo.
-echo [4/4] Instalando bibliotecas necessarias...
+echo [4/5] Instalando bibliotecas necessarias...
 echo.
 
 REM Tenta com python direto da sessao atual
@@ -174,6 +204,18 @@ if %errorlevel% equ 0 (
 )
 
 :fim_ok
+echo.
+pause
+exit /b 0
+
+:fim_reboot
+echo.
+echo ===================================================
+echo    REINICIALIZACAO NECESSARIA!
+echo ===================================================
+echo    O KB3140245 foi instalado para habilitar TLS 1.2.
+echo    Reinicie o PC e execute o instalador novamente.
+echo ===================================================
 echo.
 pause
 exit /b 0
