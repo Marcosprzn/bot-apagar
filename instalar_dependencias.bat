@@ -52,7 +52,7 @@ echo     URL: %PYTHON_URL%
 echo     Aguarde, isso pode demorar alguns minutos...
 echo.
 
-powershell -Command "& { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\python_install.exe' -UseBasicParsing }"
+powershell -Command "& { try{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls } catch { try{ [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {} }; Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\python_install.exe' -UseBasicParsing }"
 
 if not exist "%TEMP%\python_install.exe" (
     echo.

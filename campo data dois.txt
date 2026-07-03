@@ -1,0 +1,80 @@
+How found:	Mouse move (623,241)
+	hwnd=0x0000000000030372 32bit class="TcxCustomDropDownInnerEdit" style=0x540100C0 ex=0x0
+Name:	""
+ControlType:	UIA_EditControlTypeId (0xC354)
+LocalizedControlType:	"editar"
+BoundingRectangle:	{l:591 t:231 r:666 b:246}
+IsEnabled:	true
+IsOffscreen:	false
+IsKeyboardFocusable:	true
+HasKeyboardFocus:	false
+AccessKey:	""
+ProcessId:	5048
+RuntimeId:	[2A.30372]
+AutomationId:	"197490"
+FrameworkId:	"Win32"
+ClassName:	"TcxCustomDropDownInnerEdit"
+NativeWindowHandle:	0x30372
+IsContentElement:	true
+ProviderDescription:	"[pid:7324,hwnd:0x30372 Main:Nested [pid:5048,hwnd:0x30372 Annotation(parent link):Microsoft: Annotation Proxy (unmanaged:uiautomationcore.dll); Main:Microsoft: MSAA Proxy (unmanaged:uiautomationcore.dll)]; Hwnd(parent link):Microsoft: HWND Proxy (unmanaged:uiautomationcore.dll)]"
+IsPassword:	false
+HelpText:	""
+LegacyIAccessible.ChildId:	0
+LegacyIAccessible.DefaultAction:	""
+LegacyIAccessible.Description:	""
+LegacyIAccessible.Help:	""
+LegacyIAccessible.KeyboardShortcut:	""
+LegacyIAccessible.Name:	""
+LegacyIAccessible.Role:	texto editável (0x2A)
+LegacyIAccessible.State:	focalizável (0x100000)
+LegacyIAccessible.Value:	"31/05/2026"
+Value.IsReadOnly:	false
+Value.Value:	"31/05/2026"
+IsAnnotationPatternAvailable:	false
+IsDragPatternAvailable:	false
+IsDockPatternAvailable:	false
+IsDropTargetPatternAvailable:	false
+IsExpandCollapsePatternAvailable:	false
+IsGridItemPatternAvailable:	false
+IsGridPatternAvailable:	false
+IsInvokePatternAvailable:	false
+IsItemContainerPatternAvailable:	false
+IsLegacyIAccessiblePatternAvailable:	true
+IsMultipleViewPatternAvailable:	false
+IsObjectModelPatternAvailable:	false
+IsRangeValuePatternAvailable:	false
+IsScrollItemPatternAvailable:	false
+IsScrollPatternAvailable:	false
+IsSelectionItemPatternAvailable:	false
+IsSelectionPatternAvailable:	false
+IsSpreadsheetItemPatternAvailable:	false
+IsSpreadsheetPatternAvailable:	false
+IsStylesPatternAvailable:	false
+IsSynchronizedInputPatternAvailable:	false
+IsTableItemPatternAvailable:	false
+IsTablePatternAvailable:	false
+IsTextChildPatternAvailable:	false
+IsTextEditPatternAvailable:	false
+IsTextPatternAvailable:	false
+IsTextPattern2Available:	false
+IsTogglePatternAvailable:	false
+IsTransformPatternAvailable:	false
+IsTransform2PatternAvailable:	false
+IsValuePatternAvailable:	true
+IsVirtualizedItemPatternAvailable:	false
+IsWindowPatternAvailable:	false
+FirstChild:	[null]
+LastChild:	[null]
+Next:	[null]
+Previous:	[null]
+Other Props:	Object has no additional properties
+Children:	Container has no children
+Ancestors:	"31/05/2026" painel
+	"" painel
+	"Procurar" painel
+	"" painel
+	"" painel
+	"Procurar Movimento Financeiro [TRIUNFO ADMINISTRADORA E GESTÃO LTD - Mar/2026] " janela
+	"Mega Empresarial - Sistemas de Gestão Empresarial Mega ERP - [TRIUNFO ADMINISTRADORA E GESTÃO LTD - Mar/2026] " painel
+	"Desktop" painel
+	[ No Parent ]

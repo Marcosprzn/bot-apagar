@@ -1,0 +1,74 @@
+How found:	Mouse move (1032,588)
+	hwnd=0x0000000000110674 32bit class="TMgSpeedButton" style=0x5401000B ex=0x0
+Name:	"Selecionar"
+ControlType:	UIA_ButtonControlTypeId (0xC350)
+LocalizedControlType:	"botão"
+BoundingRectangle:	{l:988 t:575 r:1084 b:600}
+IsEnabled:	true
+IsOffscreen:	false
+IsKeyboardFocusable:	true
+HasKeyboardFocus:	false
+AccessKey:	"Alt+s"
+ProcessId:	5048
+RuntimeId:	[2A.110674]
+AutomationId:	"1115764"
+FrameworkId:	"Win32"
+ClassName:	"TMgSpeedButton"
+NativeWindowHandle:	0x110674
+ProviderDescription:	"[pid:7324,hwnd:0x110674 Main:Nested [pid:5048,hwnd:0x110674 Annotation(parent link):Microsoft: Annotation Proxy (unmanaged:uiautomationcore.dll); Main:Microsoft: MSAA Proxy (unmanaged:uiautomationcore.dll)]; Hwnd(parent link):Microsoft: HWND Proxy (unmanaged:uiautomationcore.dll)]"
+IsPassword:	false
+HelpText:	""
+LegacyIAccessible.ChildId:	0
+LegacyIAccessible.DefaultAction:	"Pressionar"
+LegacyIAccessible.Description:	""
+LegacyIAccessible.Help:	""
+LegacyIAccessible.KeyboardShortcut:	"Alt+s"
+LegacyIAccessible.Name:	"Selecionar"
+LegacyIAccessible.Role:	botão de ação (0x2B)
+LegacyIAccessible.State:	focalizável (0x100000)
+LegacyIAccessible.Value:	""
+IsAnnotationPatternAvailable:	false
+IsDragPatternAvailable:	false
+IsDockPatternAvailable:	false
+IsDropTargetPatternAvailable:	false
+IsExpandCollapsePatternAvailable:	false
+IsGridItemPatternAvailable:	false
+IsGridPatternAvailable:	false
+IsInvokePatternAvailable:	true
+IsItemContainerPatternAvailable:	false
+IsLegacyIAccessiblePatternAvailable:	true
+IsMultipleViewPatternAvailable:	false
+IsObjectModelPatternAvailable:	false
+IsRangeValuePatternAvailable:	false
+IsScrollItemPatternAvailable:	false
+IsScrollPatternAvailable:	false
+IsSelectionItemPatternAvailable:	false
+IsSelectionPatternAvailable:	false
+IsSpreadsheetItemPatternAvailable:	false
+IsSpreadsheetPatternAvailable:	false
+IsStylesPatternAvailable:	false
+IsSynchronizedInputPatternAvailable:	false
+IsTableItemPatternAvailable:	false
+IsTablePatternAvailable:	false
+IsTextChildPatternAvailable:	false
+IsTextEditPatternAvailable:	false
+IsTextPatternAvailable:	false
+IsTextPattern2Available:	false
+IsTogglePatternAvailable:	false
+IsTransformPatternAvailable:	false
+IsTransform2PatternAvailable:	false
+IsValuePatternAvailable:	false
+IsVirtualizedItemPatternAvailable:	false
+IsWindowPatternAvailable:	false
+FirstChild:	[null]
+LastChild:	[null]
+Next:	"" painel
+Previous:	[null]
+Other Props:	Object has no additional properties
+Children:	Container has no children
+Ancestors:	"" painel
+	"" painel
+	"Movimento Financeiro [TRIUNFO ADMINISTRADORA E GESTÃO LTD - Mar/2026] " janela
+	"Mega Empresarial - Sistemas de Gestão Empresarial Mega ERP - [TRIUNFO ADMINISTRADORA E GESTÃO LTD - Mar/2026] " painel
+	"Desktop" painel
+	[ No Parent ]
