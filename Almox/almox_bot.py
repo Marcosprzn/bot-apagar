@@ -5,7 +5,7 @@ import re
 import ctypes
 import tkinter as tk
 from tkinter import filedialog
-from pywinauto import Desktop, mouse
+from pywinauto import mouse
 from pywinauto.keyboard import send_keys
 import openpyxl
 import PyPDF2
@@ -13,9 +13,9 @@ import PyPDF2
 # ============================================================
 # CONFIGURACOES
 # ============================================================
-EDIT_COORDS    = (328, 280)
-FILTRAR_COORDS = (416, 678)
-GRID_POS       = (639, 282)  # Ponto qualquer dentro da grade para clicar
+EDIT_COORDS       = (328, 280)
+FILTRAR_COORDS    = (416, 678)
+PRIMEIRA_LINHA    = (649, 262)  # Primeiro item da tabela
 
 PASTA_ATUAL = os.path.dirname(__file__)
 EXCEL_PATH  = os.path.join(PASTA_ATUAL, "resultados_almox.xlsx")
@@ -129,20 +129,11 @@ def codigos_unicos(linhas):
     return unicos
 
 # ============================================================
-# LER TEXTO DA GRADE via CLIPBOARD (Ctrl+A + Ctrl+C)
+# LER CADA LINHA DA GRADE navegando com seta para baixo
 # ============================================================
 import tkinter as tk
 
-def capturar_grid_pela_tela():
-    """Clica na grade (um clique no alto da tabela) e copia tudo."""
-    mouse.click(button="left", coords=GRID_POS)
-    time.sleep(0.3)
-    send_keys("^{HOME}")  # Vai para primeira celula
-    time.sleep(0.2)
-    send_keys("^a")       # Seleciona tudo
-    time.sleep(0.3)
-    send_keys("^c")       # Copia
-    time.sleep(0.5)
+def ler_clipboard():
     try:
         root = tk.Tk()
         root.withdraw()
@@ -152,82 +143,50 @@ def capturar_grid_pela_tela():
     except:
         return ""
 
-def extrair_saida_por_data(texto_grid, data_pdf):
-    """Procura 'Saida' na grade que tenha a data igual a data_pdf. Ignora 'Final'."""
-    if not texto_grid:
-        return "#N/D", "grid_vazia"
-    
-    linhas = texto_grid.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    linhas = [l for l in linhas if l.strip()]
-    
-    if len(linhas) < 2:
-        return "#N/D", "poucas_linhas"
-    
-    cabecalho = linhas[0].split("\t")
-    col_mov = col_data = col_vl = -1
-    for idx, col in enumerate(cabecalho):
-        c = col.strip().lower()
-        if "movimenta" in c:
-            col_mov = idx
-        if "data do movimento" in c or "data movimento" in c:
-            col_data = idx
-        if "vl.sa" in c or "vl_sa" in c or "vl. sa" in c:
-            col_vl = idx
-    
-    if -1 in (col_mov, col_data, col_vl):
-        return "#N/D", f"colunas_mov={col_mov}_data={col_data}_vl={col_vl}"
-    
-    data_pdf = data_pdf.strip()
-    
-    for linha in linhas[1:]:
-        cols = linha.split("\t")
-        if col_mov >= len(cols) or col_data >= len(cols) or col_vl >= len(cols):
-            continue
-        
-        tipo_mov = cols[col_mov].strip().lower()
-        data_grid = cols[col_data].strip()
-        
-        if "final" in tipo_mov or tipo_mov == "":
-            continue
-        if "saida" not in tipo_mov:
-            continue
-        if data_grid != data_pdf:
-            continue
-        
-        valor = cols[col_vl].strip()
-        return "Saida", valor if valor else "#N/D"
-    
-    return "#N/D", f"sem_match_data_{data_pdf}"
+def parse_linha_grid(texto):
+    """Converte linha tabulada do clipboard em dict."""
+    if not texto:
+        return None
+    cols = texto.split("\t")
+    if len(cols) < 3:
+        return None
+    # Usa indices fixos baseados nos cabecalhos conhecidos
+    return {
+        "tipo": cols[0].strip() if len(cols) > 0 else "",
+        "data": cols[2].strip() if len(cols) > 2 else "",
+        "vl_saida": cols[9].strip() if len(cols) > 9 else "",
+    }
 
-def listar_saidas_grid(texto_grid):
-    """Retorna lista de (data, valor) de todas linhas 'Saida' na grid (ignora Final)."""
-    saidas = []
-    if not texto_grid:
-        return saidas
-    linhas = texto_grid.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    linhas = [l for l in linhas if l.strip()]
-    if len(linhas) < 2:
-        return saidas
-    cabecalho = linhas[0].split("\t")
-    col_mov = col_data = col_vl = -1
-    for idx, col in enumerate(cabecalho):
-        c = col.strip().lower()
-        if "movimenta" in c: col_mov = idx
-        if "data do movimento" in c: col_data = idx
-        if "vl.sa" in c or "vl_sa" in c: col_vl = idx
-    if -1 in (col_mov, col_data, col_vl):
-        return saidas
-    for linha in linhas[1:]:
-        cols = linha.split("\t")
-        if len(cols) <= max(col_mov, col_data, col_vl):
-            continue
-        tipo = cols[col_mov].strip().lower()
-        if "final" in tipo: continue
-        if "saida" not in tipo: continue
-        data = cols[col_data].strip()
-        valor = cols[col_vl].strip()
-        saidas.append((data, valor))
-    return saidas
+def navegar_grade(data_pdf):
+    """Clica na primeira linha, navega pra baixo ate 'Final', retorna precos."""
+    mouse.click(button="left", coords=PRIMEIRA_LINHA)
+    time.sleep(0.3)
+
+    linhas_lidas = []
+    max_linhas = 200  # segurança pra loop infinito
+
+    for _ in range(max_linhas):
+        send_keys("^c")
+        time.sleep(0.3)
+        texto = ler_clipboard()
+        if not texto:
+            break
+
+        dados = parse_linha_grid(texto)
+        if not dados:
+            break
+
+        tipo = dados["tipo"].lower()
+        if "final" in tipo:
+            break
+        if tipo == "":
+            break
+
+        linhas_lidas.append(dados)
+        send_keys("{DOWN}")
+        time.sleep(0.2)
+
+    return linhas_lidas
 
 # ============================================================
 # GERAR EXCEL
@@ -298,9 +257,7 @@ codigos = codigos[:qtd]
 print(f"  Processando: {len(codigos)} codigos")
 print()
 
-print("[3/5] Conectando ao desktop...")
-desktop = Desktop(backend="uia")
-print("  Pronto!")
+print("[3/5] Pronto!")
 print()
 
 print("[4/5] Iniciando automacao...")
@@ -351,35 +308,31 @@ for i, codigo in enumerate(codigos, 1):
     mouse.click(button="left", coords=FILTRAR_COORDS)
     time.sleep(2)
 
-    # 3. Captura via clipboard (uma vez por codigo)
-    texto_grid = capturar_grid_pela_tela()
+    # 3. Navega pela grade linha a linha
+    linhas_grid = navegar_grade(None)
+    print(f"    -> Linhas lidas da grid: {len(linhas_grid)}")
 
-    # Mostra todas as saidas disponiveis na grid
-    saidas_grid = listar_saidas_grid(texto_grid)
-    if saidas_grid:
-        print(f"    -> Saidas encontradas na grid: {len(saidas_grid)}")
-        for d, v in saidas_grid:
-            print(f"       Data: {d} | Vl.Saida: {v}")
-    else:
-        print(f"    -> Nenhuma linha 'Saida' encontrada na grid")
+    # Mostra o que foi lido
+    for lg in linhas_grid:
+        print(f"       Tipo: {lg['tipo']} | Data: {lg['data']} | Vl.Saida: {lg['vl_saida']}")
 
     # 4. Para cada linha do PDF com este codigo, tenta match pela data
     for item in linhas_por_codigo.get(codigo, []):
         data_pdf = item["data"]
-        tipo, preco = extrair_saida_por_data(texto_grid, data_pdf)
+        preco = "#N/D"
+        for lg in linhas_grid:
+            if lg["data"] == data_pdf and "saida" in lg["tipo"].lower():
+                preco = lg["vl_saida"]
+                break
         chave = (codigo, data_pdf)
         resultados[chave] = preco
+        print(f"    -> Data PDF: {data_pdf} | Preco capturado: {preco}")
 
-        print(f"    -> Data PDF: {data_pdf} | Tipo: {tipo} | Preco: {preco}")
-
-    # Salva log completo + saidas disponiveis
+    # Salva log
     with open(LOG_PATH, "a", encoding="utf-8") as log:
         log.write(f"=== Codigo: {codigo} ===\n")
-        log.write(f"Saidas na grid: {len(saidas_grid)}\n")
-        for d, v in saidas_grid:
-            log.write(f"  Saida: data={d} valor={v}\n")
-        log.write(f"Tamanho clipboard: {len(texto_grid)} chars\n")
-        log.write(texto_grid + "\n")
+        for lg in linhas_grid:
+            log.write(f"  tipo={lg['tipo']} data={lg['data']} vl={lg['vl_saida']}\n")
         log.write("=" * 40 + "\n\n")
 
 print()
