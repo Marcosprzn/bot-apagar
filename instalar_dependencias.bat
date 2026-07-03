@@ -52,7 +52,19 @@ echo     URL: %PYTHON_URL%
 echo     Aguarde, isso pode demorar alguns minutos...
 echo.
 
-powershell -Command "& { try{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls } catch { try{ [Net.ServicePointManager]::SecurityProtocol = 3072 } catch {} }; Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\python_install.exe' -UseBasicParsing }"
+powershell -Command "& { try{ [Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192 } catch {}; (New-Object System.Net.WebClient).DownloadFile('%PYTHON_URL%', '%TEMP%\python_install.exe') }"
+
+REM Fallback: tenta com curl.exe se PowerShell falhou
+if not exist "%TEMP%\python_install.exe" (
+    echo     PowerShell falhou. Tentando com curl.exe...
+    curl -L -o "%TEMP%\python_install.exe" "%PYTHON_URL%" >nul 2>&1
+)
+
+REM Fallback: tenta com bitsadmin se curl tambem falhou
+if not exist "%TEMP%\python_install.exe" (
+    echo     curl falhou. Tentando com bitsadmin...
+    bitsadmin /transfer "DownloadPython" "%PYTHON_URL%" "%TEMP%\python_install.exe" >nul 2>&1
+)
 
 if not exist "%TEMP%\python_install.exe" (
     echo.
