@@ -104,27 +104,24 @@ echo   Atualizando pip...
 "%PY_EXE%" -m pip install --upgrade pip --quiet
 echo.
 
-set LIVROS=pywinauto comtypes pyautogui Pillow pywin32
+echo   Instalando pywinauto...
+"%PY_EXE%" -m pip install pywinauto
+echo.
 
-for %%L in (%LIVROS%) do (
-    echo   Instalando %%L...
-    "%PY_EXE%" -m pip install %%L
-    if errorlevel 1 (
-        echo   [FALHOU] %%L - tentando alternativa...
-        if "%%L"=="pywin32" "%PY_EXE%" -m pip install pywin32==306
-        if "%%L"=="comtypes" "%PY_EXE%" -m pip install comtypes==1.1.11
-    )
-    echo.
-)
+echo   Instalando comtypes...
+"%PY_EXE%" -m pip install comtypes
+echo.
 
-echo   Registrando pywin32 no Windows...
-"%PY_EXE%" -c "import win32api" >nul 2>&1
-if errorlevel 1 (
-    "%PY_EXE%" -c "import sys; exec(open(sys.prefix + '/Scripts/pywin32_postinstall.py').read())" -install >nul 2>&1
-)
+echo   Instalando pyautogui...
+"%PY_EXE%" -m pip install pyautogui
+echo.
+
+echo   Instalando Pillow...
+"%PY_EXE%" -m pip install Pillow
+echo.
 
 echo   Verificando instalacao...
-"%PY_EXE%" -c "import pywinauto; import comtypes; import pyautogui; import PIL; import win32api; print('OK!')"
+"%PY_EXE%" -c "import pywinauto; import comtypes; import pyautogui; import PIL; print('OK!')"
 
 if %errorlevel% equ 0 (
     echo.
@@ -137,11 +134,7 @@ if %errorlevel% equ 0 (
     echo    ALGUMAS BIBLIOTECAS FALHARAM
     echo ===================================================
     echo    Tente instalar manualmente:
-    echo    "%PY_EXE%" -m pip install pywinauto comtypes pyautogui Pillow pywin32
-    echo.
-    "%PY_EXE%" -c "import win32api; print('win32api OK')"
-    "%PY_EXE%" -c "import pywinauto; print('pywinauto OK')"
-    "%PY_EXE%" -c "import pyautogui; print('pyautogui OK')"
+    echo    "%PY_EXE%" -m pip install pywinauto comtypes pyautogui Pillow
 )
 
 echo.

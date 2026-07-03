@@ -1,7 +1,8 @@
 import time
-import win32api
-import win32con
+import ctypes
 from pywinauto import Desktop
+
+user32 = ctypes.windll.user32
 
 def main():
     print("=" * 60)
@@ -18,9 +19,9 @@ def main():
 
     while True:
         # Verifica se F8 foi pressionado
-        if win32api.GetAsyncKeyState(win32con.VK_F8) & 0x8000:
+        if user32.GetAsyncKeyState(0x77) & 0x8000:
             try:
-                x, y = win32api.GetCursorPos()
+                x, y = user32.GetCursorPos()
                 print(f"Capturando elemento na posição X:{x} Y:{y} ...")
                 
                 # Obtém o elemento UIA abaixo do cursor
@@ -59,7 +60,7 @@ def main():
             time.sleep(0.5)
             
         # Verifica se ESC foi pressionado para sair
-        if win32api.GetAsyncKeyState(win32con.VK_ESCAPE) & 0x8000:
+        if user32.GetAsyncKeyState(0x1B) & 0x8000:
             print("\nEncerrando o capturador...")
             break
             

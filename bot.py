@@ -4,8 +4,6 @@ import sys
 import os
 import traceback
 import threading
-import win32api
-import win32con
 import pyautogui
 from pywinauto import Desktop, mouse
 
@@ -33,7 +31,7 @@ def linha(char='=', n=55):
 
 def pausado_flag():
     """Flag de pausa controlada pelo F8."""
-    return win32api.GetAsyncKeyState(win32con.VK_F8) & 0x8000
+    return ctypes.windll.user32.GetAsyncKeyState(0x77) & 0x8000
 
 # ============================================================
 #  SLEEP COM SUPORTE A PAUSA (F8) E PARADA POR IMAGEM

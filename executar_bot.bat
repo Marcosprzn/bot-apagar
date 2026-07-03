@@ -46,11 +46,11 @@ echo.
 
 REM Pega o diretorio onde este .bat esta localizado
 set "BOT_DIR=%~dp0"
-set "BOT_SCRIPT=%BOT_DIR%novobot.py"
+set "BOT_SCRIPT=%BOT_DIR%bot.py"
 
 if not exist "%BOT_SCRIPT%" (
-    echo ERRO: novobot.py nao encontrado em: %BOT_SCRIPT%
-    echo Certifique-se que o executar_bot.bat esta na mesma pasta que o novobot.py
+    echo ERRO: bot.py nao encontrado em: %BOT_SCRIPT%
+    echo Certifique-se que o executar_bot.bat esta na mesma pasta que o bot.py
     echo.
     pause
     exit /b 1
