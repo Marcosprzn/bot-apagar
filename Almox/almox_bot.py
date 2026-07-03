@@ -1,7 +1,10 @@
 import time
 import os
+import sys
 import re
 import ctypes
+import tkinter as tk
+from tkinter import filedialog
 from pywinauto import Desktop, mouse
 from pywinauto.keyboard import send_keys
 import openpyxl
@@ -16,8 +19,21 @@ SAIDA_COORDS   = (639, 282)
 PRECO_COORDS   = (745, 286)
 
 PASTA_ATUAL = os.path.dirname(__file__)
-PDF_PATH    = os.path.join(PASTA_ATUAL, "SaidaFaltaValorUnitario.pdf")
 EXCEL_PATH  = os.path.join(PASTA_ATUAL, "resultados_almox.xlsx")
+
+# ============================================================
+# SELECIONAR PDF
+# ============================================================
+def selecionar_pdf():
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    caminho = filedialog.askopenfilename(
+        title="Selecione o PDF com os codigos",
+        filetypes=[("Arquivos PDF", "*.pdf"), ("Todos", "*.*")]
+    )
+    root.destroy()
+    return caminho
 
 # ============================================================
 # LER PDF COMPLETO
@@ -174,8 +190,17 @@ print("  BOT ALMOX - Captura de Unitarios")
 print("=" * 55)
 print()
 
-# --- Ler PDF ---
-print("[1/5] Lendo PDF...")
+# --- Selecionar PDF ---
+print("[1/5] Selecione o arquivo PDF...")
+PDF_PATH = selecionar_pdf()
+if not PDF_PATH:
+    print("  Nenhum PDF selecionado. Encerrando.")
+    input("Pressione ENTER para sair...")
+    sys.exit(0)
+print(f"  PDF: {os.path.basename(PDF_PATH)}")
+print()
+
+print("Lendo PDF...")
 linhas = ler_pdf(PDF_PATH)
 codigos = codigos_unicos(linhas)
 print(f"  Linhas no PDF: {len(linhas)}")
