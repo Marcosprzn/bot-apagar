@@ -131,8 +131,6 @@ def codigos_unicos(linhas):
 # ============================================================
 # LER CADA LINHA DA GRADE navegando com seta para baixo
 # ============================================================
-import tkinter as tk
-
 def ler_clipboard():
     try:
         root = tk.Tk()
@@ -148,17 +146,15 @@ def parse_linha_grid(texto):
     if not texto:
         return None
     cols = texto.split("\t")
-    if len(cols) < 3:
-        return None
-    # Usa indices fixos baseados nos cabecalhos conhecidos
     return {
         "tipo": cols[0].strip() if len(cols) > 0 else "",
         "data": cols[2].strip() if len(cols) > 2 else "",
         "vl_saida": cols[9].strip() if len(cols) > 9 else "",
     }
 
-def navegar_grade(data_pdf):
+def navegar_grade():
     """Clica na primeira linha, navega pra baixo ate 'Final', retorna precos."""
+    time.sleep(0.5)
     mouse.click(button="left", coords=PRIMEIRA_LINHA)
     time.sleep(0.3)
 
@@ -170,10 +166,12 @@ def navegar_grade(data_pdf):
         time.sleep(0.3)
         texto = ler_clipboard()
         if not texto:
+            print(f"       [DEBUG] Clipboard vazio")
             break
 
         dados = parse_linha_grid(texto)
         if not dados:
+            print(f"       [DEBUG] Clipboard sem formato de linha: '{texto[:100]}'")
             break
 
         tipo = dados["tipo"].lower()
@@ -309,7 +307,7 @@ for i, codigo in enumerate(codigos, 1):
     time.sleep(2)
 
     # 3. Navega pela grade linha a linha
-    linhas_grid = navegar_grade(None)
+    linhas_grid = navegar_grade()
     print(f"    -> Linhas lidas da grid: {len(linhas_grid)}")
 
     # Mostra o que foi lido
