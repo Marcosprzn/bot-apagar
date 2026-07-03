@@ -126,6 +126,28 @@ def codigos_unicos(linhas):
     return unicos
 
 # ============================================================
+# PAUSA POR F8
+# ============================================================
+BOT_RODANDO = True
+PAUSADO = False
+
+def verificar_pausa():
+    global PAUSADO
+    if ctypes.windll.user32.GetAsyncKeyState(0x77) & 0x8000:
+        PAUSADO = not PAUSADO
+        if PAUSADO:
+            print("\n  [F8] PAUSADO. Pressione F8 para retomar...")
+        else:
+            print("\n  [F8] Retomando...")
+        time.sleep(0.5)
+    while PAUSADO:
+        if ctypes.windll.user32.GetAsyncKeyState(0x77) & 0x8000:
+            PAUSADO = False
+            print("\n  [F8] Retomando...")
+            time.sleep(0.5)
+        time.sleep(0.1)
+
+# ============================================================
 # LER TEXTO DE UMA POSICAO NA TELA
 # ============================================================
 def texto_na_posicao(x, y, desktop):
@@ -223,6 +245,7 @@ print()
 # --- Iniciar ---
 print("[4/5] Iniciando automacao...")
 print("  Deixe a janela de consulta do MEGA ERP aberta e visivel.")
+print("  [F8] = Pausar / Retomar a qualquer momento")
 print("  Iniciando em 5 segundos...")
 time.sleep(5)
 print()
@@ -232,7 +255,12 @@ print()
 
 precos = {}
 for i, codigo in enumerate(codigos, 1):
-    print(f"  [{i}/{len(codigos)}] Codigo: {codigo}")
+    verificar_pausa()
+    if not BOT_RODANDO:
+        break
+
+    codigo_limpo = codigo.replace(".", "")
+    print(f"  [{i}/{len(codigos)}] Codigo: {codigo} -> digitando: {codigo_limpo}")
 
     mouse.click(button="left", coords=EDIT_COORDS)
     time.sleep(0.3)
@@ -240,7 +268,7 @@ for i, codigo in enumerate(codigos, 1):
     time.sleep(0.1)
     send_keys("{DELETE}")
     time.sleep(0.1)
-    send_keys(codigo)
+    send_keys(codigo_limpo)
     time.sleep(0.3)
 
     mouse.click(button="left", coords=FILTRAR_COORDS)
