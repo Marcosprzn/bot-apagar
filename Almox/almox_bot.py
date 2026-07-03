@@ -8,42 +8,109 @@ import openpyxl
 import PyPDF2
 
 # ============================================================
-# CONFIGURACOES (coordenas capturadas)
+# CONFIGURACOES
 # ============================================================
-EDIT_COORDS  = (328, 280)
+EDIT_COORDS    = (328, 280)
 FILTRAR_COORDS = (416, 678)
-SAIDA_COORDS = (639, 282)
-PRECO_COORDS = (745, 286)
+SAIDA_COORDS   = (639, 282)
+PRECO_COORDS   = (745, 286)
 
 PASTA_ATUAL = os.path.dirname(__file__)
 PDF_PATH    = os.path.join(PASTA_ATUAL, "SaidaFaltaValorUnitario.pdf")
 EXCEL_PATH  = os.path.join(PASTA_ATUAL, "resultados_almox.xlsx")
 
 # ============================================================
-# EXTRAIR CODIGOS UNICOS DO PDF
+# LER PDF COMPLETO
 # ============================================================
-def extrair_codigos(pdf_path):
-    codigos = []
-    with open(pdf_path, "rb") as f:
+def ler_pdf(caminho):
+    linhas = []
+    with open(caminho, "rb") as f:
         reader = PyPDF2.PdfReader(f)
         for pagina in reader.pages:
             texto = pagina.extract_text()
             for linha in texto.split("\n"):
                 linha = linha.strip()
-                match = re.match(r"^(\d{2}\.\d{3})", linha)
-                if match:
-                    codigos.append(match.group(1))
-    # Remove duplicatas mantendo ordem
+                if not linha:
+                    continue
+                dados = parse_linha(linha)
+                if dados:
+                    linhas.append(dados)
+    return linhas
+
+def parse_linha(linha):
+    # Separa pela data (distintivo)
+    partes = re.split(r"(\d{2}/\d{2}/\d{4})", linha)
+    if len(partes) < 3:
+        return None
+
+    antes_data = partes[0].strip()
+    data = partes[1].strip()
+    depois_data = partes[2].strip()
+
+    # Extrai codigo do inicio
+    m = re.match(r"^(\d{2}\.\d{3})", antes_data)
+    if not m:
+        return None
+    codigo = m.group(1)
+    resto = antes_data[m.end():].strip()
+
+    # Extrai departamento (3 digitos + nome) no final
+    dept_codigo = ""
+    dept_nome = ""
+    descricao = resto
+    m_dept = re.search(r"(\d{3})([A-Za-z\u00C0-\u00FF].*)$", resto)
+    if m_dept:
+        descricao = resto[:m_dept.start()].strip()
+        dept_codigo = m_dept.group(1)
+        dept_nome = m_dept.group(2).strip()
+
+    # Campos depois da data
+    campos = depois_data.split()
+    req = campos[0] if len(campos) > 0 else ""
+    qtd = ""
+    unidade = ""
+    val_unit = ""
+    val_total = ""
+    if len(campos) > 1:
+        m_qtd = re.match(r"([\d.,]+)([A-Za-z].*)$", campos[1])
+        if m_qtd:
+            qtd = m_qtd.group(1)
+            unidade = m_qtd.group(2).strip()
+        else:
+            qtd = campos[1]
+    if len(campos) > 2:
+        val_unit = campos[2]
+    if len(campos) > 3:
+        val_total = campos[3]
+
+    return {
+        "codigo": codigo,
+        "descricao": descricao,
+        "dept_codigo": dept_codigo,
+        "dept_nome": dept_nome,
+        "data": data,
+        "req": req,
+        "qtd": qtd,
+        "unidade": unidade,
+        "val_unit": val_unit,
+        "val_total": val_total,
+    }
+
+# ============================================================
+# OBTER CODIGOS UNICOS (ORDEM DE APARICAO)
+# ============================================================
+def codigos_unicos(linhas):
     vistos = set()
     unicos = []
-    for c in codigos:
+    for item in linhas:
+        c = item["codigo"]
         if c not in vistos:
             vistos.add(c)
             unicos.append(c)
     return unicos
 
 # ============================================================
-# LER TEXTO DE UMA POSICAO NA TELA (UIA)
+# LER TEXTO DE UMA POSICAO NA TELA
 # ============================================================
 def texto_na_posicao(x, y, desktop):
     try:
@@ -54,92 +121,131 @@ def texto_na_posicao(x, y, desktop):
         return None
 
 # ============================================================
-# SALVAR RESULTADOS EM EXCEL
+# GERAR EXCEL COMPLETO
 # ============================================================
-def salvar_excel(resultados, caminho):
+def gerar_excel(linhas, precos_map, caminho):
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Resultados"
-    ws.append(["Codigo", "Preco Capturado"])
-    for codigo, preco in resultados:
-        ws.append([codigo, preco])
+    ws.title = "Almox"
+    cabecalhos = [
+        "Codigo", "Descricao", "Dept Cod", "Dept Nome",
+        "Data", "Requisicao", "Quantidade", "Unidade",
+        "Valor Unitario", "Valor Total"
+    ]
+    ws.append(cabecalhos)
+    for item in linhas:
+        cod = item["codigo"]
+        val_unit = precos_map.get(cod, item["val_unit"])
+        ws.append([
+            cod,
+            item["descricao"],
+            item["dept_codigo"],
+            item["dept_nome"],
+            item["data"],
+            item["req"],
+            item["qtd"],
+            item["unidade"],
+            val_unit,
+            item["val_total"],
+        ])
     wb.save(caminho)
-    print(f"  Resultados salvos em: {caminho}")
+    print(f"  Planilha salva: {caminho}")
+
+# ============================================================
+# INTERFACE
+# ============================================================
+def perguntar_quantidade(total):
+    print(f"  Total de codigos unicos disponiveis: {total}")
+    resp = input("  Quantos codigos processar? (Enter = todos): ").strip()
+    if resp == "":
+        return total
+    try:
+        n = int(resp)
+        return min(n, total)
+    except:
+        return total
 
 # ============================================================
 # MAIN
 # ============================================================
+os.system("cls" if os.name == "nt" else "clear")
 print("=" * 55)
-print("  BOT ALMOX - Captura de Prec os")
+print("  BOT ALMOX - Captura de Unitarios")
 print("=" * 55)
 print()
 
 # --- Ler PDF ---
-print("[1/4] Extraindo codigos do PDF...")
-codigos = extrair_codigos(PDF_PATH)
-print(f"  Total de codigos unicos: {len(codigos)}")
+print("[1/5] Lendo PDF...")
+linhas = ler_pdf(PDF_PATH)
+codigos = codigos_unicos(linhas)
+print(f"  Linhas no PDF: {len(linhas)}")
+print(f"  Codigos unicos: {len(codigos)}")
+print()
+
+# --- Perguntar quantidade ---
+print("[2/5] Quantos codigos processar?")
+qtd = perguntar_quantidade(len(codigos))
+codigos = codigos[:qtd]
+print(f"  Processando: {len(codigos)} codigos")
 print()
 
 # --- Conectar desktop ---
-print("[2/4] Conectando ao desktop...")
+print("[3/5] Conectando ao desktop...")
 desktop = Desktop(backend="uia")
 print("  Pronto!")
 print()
 
-print("[3/4] Iniciando automacao...")
-print("  Prepare a tela do MEGA ERP com a janela de consulta.")
+# --- Iniciar ---
+print("[4/5] Iniciando automacao...")
+print("  Deixe a janela de consulta do MEGA ERP aberta e visivel.")
 print("  Iniciando em 5 segundos...")
 time.sleep(5)
 print()
 
-print("[4/4] Executando...")
+print("[5/5] Executando...")
 print()
 
-resultados = []
+precos = {}
 for i, codigo in enumerate(codigos, 1):
-    print(f"  [{i}/{len(codigos)}] Processando codigo: {codigo}")
+    print(f"  [{i}/{len(codigos)}] Codigo: {codigo}")
 
-    # 1. Clica no campo Edit e digita o codigo
     mouse.click(button="left", coords=EDIT_COORDS)
     time.sleep(0.3)
-    send_keys("^a")   # Seleciona tudo
+    send_keys("^a")
     time.sleep(0.1)
-    send_keys("{DELETE}")  # Apaga
+    send_keys("{DELETE}")
     time.sleep(0.1)
-    send_keys(codigo)  # Digita o codigo
+    send_keys(codigo)
     time.sleep(0.3)
 
-    # 2. Clica em Filtrar
     mouse.click(button="left", coords=FILTRAR_COORDS)
-    time.sleep(2)  # Aguarda carregar
+    time.sleep(2)
 
-    # 3. Verifica se achou "saida" na posicao esperada
     texto_saida = texto_na_posicao(SAIDA_COORDS[0], SAIDA_COORDS[1], desktop)
     preco = "#N/D"
 
     if texto_saida and "saida" in texto_saida.lower():
-        # Captura o preco na mesma linha
         texto_preco = texto_na_posicao(PRECO_COORDS[0], PRECO_COORDS[1], desktop)
         if texto_preco:
             preco = texto_preco
-        print(f"    -> Saida encontrada! Preco: {preco}")
+        print(f"    -> OK. Preco: {preco}")
     else:
-        print(f"    -> Saida nao encontrada ou posicao fora da tela")
+        print(f"    -> Saida nao encontrada")
         if texto_saida:
-            print(f"    -> Texto encontrado: '{texto_saida}'")
+            print(f"    -> Texto lido: '{texto_saida}'")
 
-    resultados.append((codigo, preco))
+    precos[codigo] = preco
 
-# --- Salvar Excel ---
+# --- Gerar Excel ---
 print()
-print("Salvando resultados...")
-salvar_excel(resultados, EXCEL_PATH)
+print("Gerando planilha final...")
+gerar_excel(linhas, precos, EXCEL_PATH)
 
 print()
 print("=" * 55)
-print("  AUTOMACAO FINALIZADA!")
-print(f"  Processados: {len(codigos)} codigos")
-print(f"  Resultados: {EXCEL_PATH}")
+print("  FINALIZADO!")
+print(f"  Codigos processados: {len(codigos)}")
+print(f"  Planilha: {EXCEL_PATH}")
 print("=" * 55)
 print()
 input("Pressione ENTER para fechar...")
