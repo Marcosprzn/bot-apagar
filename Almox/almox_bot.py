@@ -135,12 +135,16 @@ import tkinter as tk
 
 def capturar_grid_pela_tela():
     """Clica na grade, seleciona tudo, copia e retorna texto do clipboard."""
-    mouse.click(button="left", coords=GRID_POS)
+    # Clica em 3 posicoes diferentes para garantir que esta nos dados
+    for pos in [GRID_POS, (GRID_POS[0], GRID_POS[1] + 30), (GRID_POS[0], GRID_POS[1] + 60)]:
+        mouse.click(button="left", coords=pos)
+        time.sleep(0.1)  # clique triplo para selecionar
+    
     time.sleep(0.3)
     send_keys("^a")
-    time.sleep(0.2)
-    send_keys("^c")
     time.sleep(0.3)
+    send_keys("^c")
+    time.sleep(0.5)
     try:
         root = tk.Tk()
         root.withdraw()
@@ -290,8 +294,10 @@ for i, codigo in enumerate(codigos, 1):
     print(f"    -> Tipo: {tipo} | Preco: {preco}")
 
     if preco == "#N/D" and texto_grid:
-        print(f"    -> Texto copiado da grid (primeiras 200 chars):")
-        print(f"       {texto_grid[:200]}")
+        print(f"    -> Texto copiado da grid (primeiros 3000 chars):")
+        print(f"       {texto_grid[:3000]}")
+        print(f"    -> Total de caracteres copiados: {len(texto_grid)}")
+        print(f"    -> Linhas copiadas: {len(texto_grid.split(chr(10)))}")
 
     precos[codigo] = preco
 
