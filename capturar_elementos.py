@@ -1,8 +1,12 @@
 import time
 import ctypes
+from ctypes import wintypes
 from pywinauto import Desktop
 
 user32 = ctypes.windll.user32
+
+class POINT(ctypes.Structure):
+    _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
 
 def main():
     print("=" * 60)
@@ -21,7 +25,9 @@ def main():
         # Verifica se F8 foi pressionado
         if user32.GetAsyncKeyState(0x77) & 0x8000:
             try:
-                x, y = user32.GetCursorPos()
+                pt = POINT()
+                user32.GetCursorPos(ctypes.byref(pt))
+                x, y = pt.x, pt.y
                 print(f"Capturando elemento na posição X:{x} Y:{y} ...")
                 
                 # Obtém o elemento UIA abaixo do cursor
