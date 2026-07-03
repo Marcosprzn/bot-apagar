@@ -154,35 +154,35 @@ def parse_linha_grid(texto):
 
 def navegar_grade():
     """Clica na primeira linha, navega pra baixo ate 'Final', retorna precos."""
-    time.sleep(0.5)
-    mouse.click(button="left", coords=PRIMEIRA_LINHA)
-    time.sleep(0.3)
-
     linhas_lidas = []
-    max_linhas = 200  # segurança pra loop infinito
-
-    for _ in range(max_linhas):
-        send_keys("^c")
+    try:
+        time.sleep(0.5)
+        mouse.click(button="left", coords=PRIMEIRA_LINHA)
         time.sleep(0.3)
-        texto = ler_clipboard()
-        if not texto:
-            print(f"       [DEBUG] Clipboard vazio")
-            break
 
-        dados = parse_linha_grid(texto)
-        if not dados:
-            print(f"       [DEBUG] Clipboard sem formato de linha: '{texto[:100]}'")
-            break
+        for _ in range(200):
+            send_keys("^c")
+            time.sleep(0.3)
+            texto = ler_clipboard()
+            if not texto:
+                break
 
-        tipo = dados["tipo"].lower()
-        if "final" in tipo:
-            break
-        if tipo == "":
-            break
+            dados = parse_linha_grid(texto)
+            if not dados:
+                break
 
-        linhas_lidas.append(dados)
-        send_keys("{DOWN}")
-        time.sleep(0.2)
+            tipo = dados["tipo"].lower()
+            if "final" in tipo:
+                break
+            if tipo == "":
+                break
+
+            linhas_lidas.append(dados)
+            send_keys("{DOWN}")
+            time.sleep(0.2)
+
+    except Exception as e:
+        print(f"       [ERRO navegar_grade] {e}")
 
     return linhas_lidas
 
@@ -242,107 +242,114 @@ if not PDF_PATH:
 print(f"  PDF: {os.path.basename(PDF_PATH)}")
 print()
 
-print("Lendo PDF...")
-linhas = ler_pdf(PDF_PATH)
-codigos = codigos_unicos(linhas)
-print(f"  Linhas no PDF: {len(linhas)}")
-print(f"  Codigos unicos: {len(codigos)}")
-print()
+try:
+    print("Lendo PDF...")
+    linhas = ler_pdf(PDF_PATH)
+    codigos = codigos_unicos(linhas)
+    print(f"  Linhas no PDF: {len(linhas)}")
+    print(f"  Codigos unicos: {len(codigos)}")
+    print()
 
-print("[2/5] Quantos codigos processar?")
-qtd = perguntar_quantidade(len(codigos))
-codigos = codigos[:qtd]
-print(f"  Processando: {len(codigos)} codigos")
-print()
+    print("[2/5] Quantos codigos processar?")
+    qtd = perguntar_quantidade(len(codigos))
+    codigos = codigos[:qtd]
+    print(f"  Processando: {len(codigos)} codigos")
+    print()
 
-print("[3/5] Pronto!")
-print()
+    print("[3/5] Pronto!")
+    print()
 
-print("[4/5] Iniciando automacao...")
-print("  Deixe a janela de consulta do MEGA ERP aberta e visivel.")
-print("  [F8] = Pausar / Retomar a qualquer momento")
-print("  Iniciando em 5 segundos...")
-time.sleep(5)
-print()
+    print("[4/5] Iniciando automacao...")
+    print("  Deixe a janela de consulta do MEGA ERP aberta e visivel.")
+    print("  [F8] = Pausar / Retomar a qualquer momento")
+    print("  Iniciando em 5 segundos...")
+    time.sleep(5)
+    print()
 
-print("[5/5] Executando...")
-print()
+    print("[5/5] Executando...")
+    print()
 
-LOG_PATH = os.path.join(PASTA_ATUAL, "log_captura_grid.txt")
-with open(LOG_PATH, "w", encoding="utf-8") as log:
-    log.write("LOG DE CAPTURA DA GRADE - ALMOX BOT\n")
-    log.write("=" * 60 + "\n\n")
+    LOG_PATH = os.path.join(PASTA_ATUAL, "log_captura_grid.txt")
+    with open(LOG_PATH, "w", encoding="utf-8") as log:
+        log.write("LOG DE CAPTURA DA GRADE - ALMOX BOT\n")
+        log.write("=" * 60 + "\n\n")
 
-# Agrupa linhas do PDF por codigo: {codigo: [linha1, linha2, ...]}
-linhas_por_codigo = {}
-for item in linhas:
-    c = item["codigo"]
-    if c not in linhas_por_codigo:
-        linhas_por_codigo[c] = []
-    linhas_por_codigo[c].append(item)
+    linhas_por_codigo = {}
+    for item in linhas:
+        c = item["codigo"]
+        if c not in linhas_por_codigo:
+            linhas_por_codigo[c] = []
+        linhas_por_codigo[c].append(item)
 
-# Mapeia (codigo, data) -> valor capturado
-resultados = {}  # chave = (codigo, data)
+    resultados = {}
 
-for i, codigo in enumerate(codigos, 1):
-    verificar_pausa()
-    if not BOT_RODANDO:
-        break
+    for i, codigo in enumerate(codigos, 1):
+        verificar_pausa()
+        if not BOT_RODANDO:
+            break
 
-    codigo_limpo = codigo.replace(".", "")
-    print(f"  [{i}/{len(codigos)}] Codigo: {codigo} -> digitando: {codigo_limpo}")
+        codigo_limpo = codigo.replace(".", "")
+        print(f"  [{i}/{len(codigos)}] Codigo: {codigo} -> digitando: {codigo_limpo}")
 
-    # 1. Digita codigo
-    mouse.click(button="left", coords=EDIT_COORDS)
-    time.sleep(0.3)
-    send_keys("^a")
-    time.sleep(0.1)
-    send_keys("{DELETE}")
-    time.sleep(0.1)
-    send_keys(codigo_limpo)
-    time.sleep(0.3)
+        print("    [passo 1] Digitando codigo...")
+        mouse.click(button="left", coords=EDIT_COORDS)
+        time.sleep(0.3)
+        send_keys("^a")
+        time.sleep(0.1)
+        send_keys("{DELETE}")
+        time.sleep(0.1)
+        send_keys(codigo_limpo)
+        time.sleep(0.3)
 
-    # 2. Clica Filtrar
-    mouse.click(button="left", coords=FILTRAR_COORDS)
-    time.sleep(2)
+        print("    [passo 2] Clicando Filtrar...")
+        mouse.click(button="left", coords=FILTRAR_COORDS)
+        time.sleep(2)
 
-    # 3. Navega pela grade linha a linha
-    linhas_grid = navegar_grade()
-    print(f"    -> Linhas lidas da grid: {len(linhas_grid)}")
+        print("    [passo 3] Navegando grade...")
+        linhas_grid = navegar_grade()
+        print(f"    -> Linhas lidas: {len(linhas_grid)}")
 
-    # Mostra o que foi lido
-    for lg in linhas_grid:
-        print(f"       Tipo: {lg['tipo']} | Data: {lg['data']} | Vl.Saida: {lg['vl_saida']}")
-
-    # 4. Para cada linha do PDF com este codigo, tenta match pela data
-    for item in linhas_por_codigo.get(codigo, []):
-        data_pdf = item["data"]
-        preco = "#N/D"
         for lg in linhas_grid:
-            if lg["data"] == data_pdf and "saida" in lg["tipo"].lower():
-                preco = lg["vl_saida"]
-                break
-        chave = (codigo, data_pdf)
-        resultados[chave] = preco
-        print(f"    -> Data PDF: {data_pdf} | Preco capturado: {preco}")
+            print(f"       Tipo: {lg['tipo']} | Data: {lg['data']} | Vl.Saida: {lg['vl_saida']}")
 
-    # Salva log
-    with open(LOG_PATH, "a", encoding="utf-8") as log:
-        log.write(f"=== Codigo: {codigo} ===\n")
-        for lg in linhas_grid:
-            log.write(f"  tipo={lg['tipo']} data={lg['data']} vl={lg['vl_saida']}\n")
-        log.write("=" * 40 + "\n\n")
+        print("    [passo 4] Match por data...")
+        for item in linhas_por_codigo.get(codigo, []):
+            data_pdf = item["data"]
+            preco = "#N/D"
+            for lg in linhas_grid:
+                if lg["data"] == data_pdf and "saida" in lg["tipo"].lower():
+                    preco = lg["vl_saida"]
+                    break
+            chave = (codigo, data_pdf)
+            resultados[chave] = preco
+            print(f"    -> Data PDF: {data_pdf} | Preco: {preco}")
 
-print()
-print("Gerando planilha final...")
-gerar_excel(linhas, resultados, EXCEL_PATH)
+        with open(LOG_PATH, "a", encoding="utf-8") as log:
+            log.write(f"=== Codigo: {codigo} ===\n")
+            for lg in linhas_grid:
+                log.write(f"  tipo={lg['tipo']} data={lg['data']} vl={lg['vl_saida']}\n")
+            log.write("=" * 40 + "\n\n")
 
-print()
-print("=" * 55)
-print("  FINALIZADO!")
-print(f"  Codigos processados: {len(codigos)}")
-print(f"  Planilha: {EXCEL_PATH}")
-print(f"  Log da grid: {LOG_PATH}")
-print("=" * 55)
+    print()
+    print("Gerando planilha final...")
+    gerar_excel(linhas, resultados, EXCEL_PATH)
+
+    print()
+    print("=" * 55)
+    print("  FINALIZADO!")
+    print(f"  Codigos processados: {len(codigos)}")
+    print(f"  Planilha: {EXCEL_PATH}")
+    print(f"  Log da grid: {LOG_PATH}")
+    print("=" * 55)
+
+except Exception as e:
+    import traceback
+    print(f"\n\nERRO NA EXECUCAO: {e}")
+    traceback.print_exc()
+    erro_path = os.path.join(PASTA_ATUAL, "erro_almox.txt")
+    with open(erro_path, "w", encoding="utf-8") as f:
+        traceback.print_exc(file=f)
+    print(f"Erro salvo em: {erro_path}")
+
 print()
 input("Pressione ENTER para fechar...")
