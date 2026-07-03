@@ -134,16 +134,14 @@ def codigos_unicos(linhas):
 import tkinter as tk
 
 def capturar_grid_pela_tela():
-    """Clica na grade, seleciona tudo, copia e retorna texto do clipboard."""
-    # Clica em 3 posicoes diferentes para garantir que esta nos dados
-    for pos in [GRID_POS, (GRID_POS[0], GRID_POS[1] + 30), (GRID_POS[0], GRID_POS[1] + 60)]:
-        mouse.click(button="left", coords=pos)
-        time.sleep(0.1)  # clique triplo para selecionar
-    
+    """Clica na grade (um clique no alto da tabela) e copia tudo."""
+    mouse.click(button="left", coords=GRID_POS)
     time.sleep(0.3)
-    send_keys("^a")
+    send_keys("^{HOME}")  # Vai para primeira celula
+    time.sleep(0.2)
+    send_keys("^a")       # Seleciona tudo
     time.sleep(0.3)
-    send_keys("^c")
+    send_keys("^c")       # Copia
     time.sleep(0.5)
     try:
         root = tk.Tk()
@@ -200,6 +198,36 @@ def extrair_saida_por_data(texto_grid, data_pdf):
         return "Saida", valor if valor else "#N/D"
     
     return "#N/D", f"sem_match_data_{data_pdf}"
+
+def listar_saidas_grid(texto_grid):
+    """Retorna lista de (data, valor) de todas linhas 'Saida' na grid (ignora Final)."""
+    saidas = []
+    if not texto_grid:
+        return saidas
+    linhas = texto_grid.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    linhas = [l for l in linhas if l.strip()]
+    if len(linhas) < 2:
+        return saidas
+    cabecalho = linhas[0].split("\t")
+    col_mov = col_data = col_vl = -1
+    for idx, col in enumerate(cabecalho):
+        c = col.strip().lower()
+        if "movimenta" in c: col_mov = idx
+        if "data do movimento" in c: col_data = idx
+        if "vl.sa" in c or "vl_sa" in c: col_vl = idx
+    if -1 in (col_mov, col_data, col_vl):
+        return saidas
+    for linha in linhas[1:]:
+        cols = linha.split("\t")
+        if len(cols) <= max(col_mov, col_data, col_vl):
+            continue
+        tipo = cols[col_mov].strip().lower()
+        if "final" in tipo: continue
+        if "saida" not in tipo: continue
+        data = cols[col_data].strip()
+        valor = cols[col_vl].strip()
+        saidas.append((data, valor))
+    return saidas
 
 # ============================================================
 # GERAR EXCEL
@@ -326,6 +354,15 @@ for i, codigo in enumerate(codigos, 1):
     # 3. Captura via clipboard (uma vez por codigo)
     texto_grid = capturar_grid_pela_tela()
 
+    # Mostra todas as saidas disponiveis na grid
+    saidas_grid = listar_saidas_grid(texto_grid)
+    if saidas_grid:
+        print(f"    -> Saidas encontradas na grid: {len(saidas_grid)}")
+        for d, v in saidas_grid:
+            print(f"       Data: {d} | Vl.Saida: {v}")
+    else:
+        print(f"    -> Nenhuma linha 'Saida' encontrada na grid")
+
     # 4. Para cada linha do PDF com este codigo, tenta match pela data
     for item in linhas_por_codigo.get(codigo, []):
         data_pdf = item["data"]
@@ -335,13 +372,13 @@ for i, codigo in enumerate(codigos, 1):
 
         print(f"    -> Data PDF: {data_pdf} | Tipo: {tipo} | Preco: {preco}")
 
-        if tipo == "#N/D" and texto_grid:
-            print(f"    -> Texto copiado (primeiros 2000): {texto_grid[:2000]}")
-
-    # Salva log completo
+    # Salva log completo + saidas disponiveis
     with open(LOG_PATH, "a", encoding="utf-8") as log:
         log.write(f"=== Codigo: {codigo} ===\n")
-        log.write(f"Tamanho: {len(texto_grid)} chars\n")
+        log.write(f"Saidas na grid: {len(saidas_grid)}\n")
+        for d, v in saidas_grid:
+            log.write(f"  Saida: data={d} valor={v}\n")
+        log.write(f"Tamanho clipboard: {len(texto_grid)} chars\n")
         log.write(texto_grid + "\n")
         log.write("=" * 40 + "\n\n")
 
