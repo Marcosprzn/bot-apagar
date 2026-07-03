@@ -3,12 +3,41 @@ import os
 import sys
 import re
 import ctypes
+import atexit
+import traceback
 import tkinter as tk
 from tkinter import filedialog
 from pywinauto import mouse
 from pywinauto.keyboard import send_keys
 import openpyxl
 import PyPDF2
+
+# ============================================================
+# CAPTURA QUALQUER CRASH (mesmo fora do try/except)
+# ============================================================
+ARQUIVO_CRASH = os.path.join(os.path.dirname(__file__) or ".", "crash_almox.txt")
+
+def salvar_crash(tipo, mensagem, tb=None):
+    with open(ARQUIVO_CRASH, "a", encoding="utf-8") as f:
+        f.write(f"\n=== {tipo} em {time.strftime('%H:%M:%S')} ===\n")
+        f.write(f"{mensagem}\n")
+        if tb:
+            traceback.print_exc(file=f)
+
+def handler_excecao(tipo, valor, tb):
+    salvar_crash("EXCECAO NAO TRATADA", str(valor), tb)
+    print(f"\n[CRASH] Erro salvo em: {ARQUIVO_CRASH}")
+    print(f"[CRASH] {tipo.__name__}: {valor}")
+    input("Pressione ENTER para fechar...")
+
+sys.excepthook = handler_excecao
+
+atexit.register(lambda: salvar_crash("ATEXIT", "Programa finalizado"))
+
+with open(ARQUIVO_CRASH, "w", encoding="utf-8") as f:
+    f.write(f"LOG DE CRASH - ALMOX BOT\n")
+    f.write(f"Inicio: {time.strftime('%d/%m/%Y %H:%M:%S')}\n")
+    f.write("=" * 50 + "\n")
 
 # ============================================================
 # CONFIGURACOES
@@ -343,13 +372,10 @@ try:
     print("=" * 55)
 
 except Exception as e:
-    import traceback
     print(f"\n\nERRO NA EXECUCAO: {e}")
     traceback.print_exc()
-    erro_path = os.path.join(PASTA_ATUAL, "erro_almox.txt")
-    with open(erro_path, "w", encoding="utf-8") as f:
-        traceback.print_exc(file=f)
-    print(f"Erro salvo em: {erro_path}")
+    salvar_crash("EXCEPT_MAIN", str(e))
+    print(f"Erro salvo em: {ARQUIVO_CRASH}")
 
 print()
 input("Pressione ENTER para fechar...")
