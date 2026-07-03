@@ -264,6 +264,11 @@ print()
 print("[5/5] Executando...")
 print()
 
+LOG_PATH = os.path.join(PASTA_ATUAL, "log_captura_grid.txt")
+with open(LOG_PATH, "w", encoding="utf-8") as log:
+    log.write("LOG DE CAPTURA DA GRADE - ALMOX BOT\n")
+    log.write("=" * 60 + "\n\n")
+
 precos = {}
 for i, codigo in enumerate(codigos, 1):
     verificar_pausa()
@@ -293,11 +298,19 @@ for i, codigo in enumerate(codigos, 1):
 
     print(f"    -> Tipo: {tipo} | Preco: {preco}")
 
+    # Salva no log
+    with open(LOG_PATH, "a", encoding="utf-8") as log:
+        log.write(f"=== Codigo: {codigo} ===\n")
+        log.write(f"Tipo: {tipo} | Preco: {preco}\n")
+        log.write(f"Tamanho: {len(texto_grid)} chars | Linhas: {len(texto_grid.split(chr(10)))}\n")
+        log.write(texto_grid + "\n")
+        log.write("=" * 40 + "\n\n")
+
     if preco == "#N/D" and texto_grid:
-        print(f"    -> Texto copiado da grid (primeiros 3000 chars):")
+        print(f"    -> Texto copiado da grid:")
         print(f"       {texto_grid[:3000]}")
-        print(f"    -> Total de caracteres copiados: {len(texto_grid)}")
-        print(f"    -> Linhas copiadas: {len(texto_grid.split(chr(10)))}")
+        print(f"    -> Total de caracteres: {len(texto_grid)}")
+        print(f"    -> Linhas: {len(texto_grid.split(chr(10)))}")
 
     precos[codigo] = preco
 
@@ -310,6 +323,7 @@ print("=" * 55)
 print("  FINALIZADO!")
 print(f"  Codigos processados: {len(codigos)}")
 print(f"  Planilha: {EXCEL_PATH}")
+print(f"  Log da grid: {LOG_PATH}")
 print("=" * 55)
 print()
 input("Pressione ENTER para fechar...")
