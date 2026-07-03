@@ -3,8 +3,8 @@ title Instalador Bot MEGA ERP
 color 0A
 
 REM Verifica se esta como administrador
-net session >nul 2>&1
-if errorlevel 1 (
+reg query "HKU\S-1-5-19" >nul 2>&1
+if %errorlevel% neq 0 (
     echo ===================================================
     echo    ERRO: Execute como ADMINISTRADOR!
     echo ===================================================
