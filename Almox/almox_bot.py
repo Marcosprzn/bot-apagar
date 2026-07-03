@@ -155,30 +155,40 @@ def capturar_grid_pela_tela():
         return ""
 
 def extrair_saida_e_preco(texto_grid):
-    """Procura por 'saida' e o preco na mesma linha do texto copiado."""
+    """Procura por 'Saida' na coluna Movimentacao e extrai Vl.Saida."""
     if not texto_grid:
         return "#N/D", "#N/D"
     
-    linhas = texto_grid.split("\n")
-    for linha in linhas:
-        if "saida" in linha.lower():
-            # Extrai o ultimo numero (preco) da linha
-            # O formato esperado: ... saida ... 1,23  ou  #N/D
-            partes = linha.split()
-            preco = "#N/D"
-            for p in reversed(partes):
-                p = p.replace(",", ".").replace(".", "", 1) if "," in p else p
-                try:
-                    float(p.replace(",", "."))
-                    preco = p
-                    break
-                except:
-                    if p == "#N/D":
-                        preco = p
-                        break
-            return "saida", preco
+    linhas = texto_grid.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    linhas = [l for l in linhas if l.strip()]
     
-    return "#N/D", "#N/D"
+    if len(linhas) < 2:
+        return "#N/D", "grid_vazia"
+    
+    # Identifica colunas pelo cabecalho
+    cabecalho = linhas[0].split("\t")
+    col_saida = -1
+    col_vl_saida = -1
+    for idx, col in enumerate(cabecalho):
+        col_clean = col.strip().lower()
+        if "movimenta" in col_clean:
+            col_saida = idx
+        if "vl.sa" in col_clean or "vl_sa" in col_clean or "vl. sa" in col_clean:
+            col_vl_saida = idx
+    
+    if col_saida == -1 or col_vl_saida == -1:
+        return "#N/D", f"colunas_nao_encontradas"
+    
+    # Procura linha onde Movimentacao = "Saida"
+    for linha in linhas[1:]:
+        cols = linha.split("\t")
+        if col_saida < len(cols) and "saida" in cols[col_saida].strip().lower():
+            if col_vl_saida < len(cols):
+                valor = cols[col_vl_saida].strip()
+                return "Saida", valor if valor else "#N/D"
+            return "Saida", "#N/D"
+    
+    return "#N/D", "saida_sem_movimento"
 
 # ============================================================
 # GERAR EXCEL
@@ -306,11 +316,10 @@ for i, codigo in enumerate(codigos, 1):
         log.write(texto_grid + "\n")
         log.write("=" * 40 + "\n\n")
 
-    if preco == "#N/D" and texto_grid:
-        print(f"    -> Texto copiado da grid:")
-        print(f"       {texto_grid[:3000]}")
-        print(f"    -> Total de caracteres: {len(texto_grid)}")
-        print(f"    -> Linhas: {len(texto_grid.split(chr(10)))}")
+    if tipo == "#N/D" and texto_grid:
+        print(f"    -> Texto copiado da grid (primeiros 2000):")
+        print(f"       {texto_grid[:2000]}")
+        print(f"    -> Total chars: {len(texto_grid)} | Linhas: {len(texto_grid.split(chr(10)))}")
 
     precos[codigo] = preco
 
