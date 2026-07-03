@@ -59,32 +59,38 @@ echo     -> Python nao encontrado. Iniciando download...
 echo.
 
 REM ====================================================
-REM PASSO 3: Baixar Python via PowerShell (funciona em
-REM          qualquer Windows sem depender do curl)
+REM PASSO 3: Baixar Python
 REM ====================================================
 echo [3/4] Baixando o Python %PY_VER%...
 echo     URL: %PYTHON_URL%
 echo     Aguarde, isso pode demorar alguns minutos...
 echo.
 
-powershell -Command "& { try{ [Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192 } catch {}; (New-Object System.Net.WebClient).DownloadFile('%PYTHON_URL%', '%TEMP%\python_install.exe') }"
+REM Tenta ativar TLS 1.2 no .NET (essencial no Windows 7)
+reg add "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319" /v SchUseStrongCrypto /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\SOFTWARE\WOW6432Node\Microsoft\.NETFramework\v4.0.30319" /v SchUseStrongCrypto /t REG_DWORD /d 1 /f >nul 2>&1
 
-REM Fallback: tenta com curl.exe se PowerShell falhou
+REM Metodo 1: bitsadmin (mais compativel com Windows 7, usa WinHTTP nativo)
+echo     Tentando com bitsadmin...
+bitsadmin /transfer "JobPython" "%PYTHON_URL%" "%TEMP%\python_install.exe" >nul 2>&1
+
+REM Metodo 2: PowerShell WebClient
+if not exist "%TEMP%\python_install.exe" (
+    echo     bitsadmin falhou. Tentando com PowerShell...
+    powershell -Command "& { try{ [Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192 } catch {}; (New-Object System.Net.WebClient).DownloadFile('%PYTHON_URL%', '%TEMP%\python_install.exe') }" >nul 2>&1
+)
+
+REM Metodo 3: curl.exe (disponivel no Windows 10+)
 if not exist "%TEMP%\python_install.exe" (
     echo     PowerShell falhou. Tentando com curl.exe...
     curl -L -o "%TEMP%\python_install.exe" "%PYTHON_URL%" >nul 2>&1
 )
 
-REM Fallback: tenta com bitsadmin se curl tambem falhou
-if not exist "%TEMP%\python_install.exe" (
-    echo     curl falhou. Tentando com bitsadmin...
-    bitsadmin /transfer "DownloadPython" "%PYTHON_URL%" "%TEMP%\python_install.exe" >nul 2>&1
-)
-
 if not exist "%TEMP%\python_install.exe" (
     echo.
     echo     ERRO: O download falhou. Verifique sua conexao.
-    echo     Tente baixar manualmente em: https://www.python.org/downloads/
+    echo     Se estiver no Windows 7, instale o KB3140245 ou baixe manualmente:
+    echo     %PYTHON_URL%
     echo.
     goto :fim_erro
 )
