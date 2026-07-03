@@ -2,6 +2,20 @@
 title Instalador Bot MEGA ERP
 color 0A
 
+REM Verifica se esta como administrador
+net session >nul 2>&1
+if errorlevel 1 (
+    echo ===================================================
+    echo    ERRO: Execute como ADMINISTRADOR!
+    echo ===================================================
+    echo    Clique com o direito no arquivo .bat
+    echo    e selecione "Executar como administrador"
+    echo ===================================================
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo ===================================================
 echo    INSTALADOR - Bot MEGA ERP
@@ -63,15 +77,14 @@ REM PASSO 2.5: Instalar KB3140245 (TLS 1.2) no Windows 7
 REM ====================================================
 if "%WIN7%"=="1" (
     echo     Verificando atualizacao KB3140245 (TLS 1.2)...
-    wmic qfe list brief /format:texttable | find "KB3140245" >nul 2>&1
+    reg query "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB3140245" >nul 2>&1
     if errorlevel 1 (
         echo     -> KB3140245 nao encontrado. Baixando e instalando...
         if exist "%ProgramFiles(x86)%" (
-            set "KB_URL=http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x64_5b06703b4c64ccc2e4e6290c999d0f39623cf7c7.msu"
+            bitsadmin /transfer "JobKB" "http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x64_5b06703b4c64ccc2e4e6290c999d0f39623cf7c7.msu" "%TEMP%\KB3140245.msu" >nul 2>&1
         ) else (
-            set "KB_URL=http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x86_3bdf4f2c5b35607bbc1d0c539ce0d02bbadc2b34.msu"
+            bitsadmin /transfer "JobKB" "http://download.windowsupdate.com/c/msdownload/update/software/updt/2016/05/windows6.1-kb3140245-x86_3bdf4f2c5b35607bbc1d0c539ce0d02bbadc2b34.msu" "%TEMP%\KB3140245.msu" >nul 2>&1
         )
-        bitsadmin /transfer "JobKB" "%KB_URL%" "%TEMP%\KB3140245.msu" >nul 2>&1
         if exist "%TEMP%\KB3140245.msu" (
             echo     -> Instalando KB3140245...
             wusa "%TEMP%\KB3140245.msu" /quiet /norestart
@@ -222,6 +235,13 @@ exit /b 0
 
 :fim_erro
 echo.
-echo Pressione qualquer tecla para fechar...
-pause >nul
+echo ===================================================
+echo    OCORREU UM ERRO
+echo ===================================================
+echo    Verifique as mensagens acima e tente novamente.
+echo    Se o problema persistir, baixe manualmente em:
+echo    https://www.python.org/downloads/
+echo ===================================================
+echo.
+pause
 exit /b 1
