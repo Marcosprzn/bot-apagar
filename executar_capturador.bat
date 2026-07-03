@@ -9,16 +9,20 @@ echo.
 
 set "PYTHON_EXE="
 
-if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
-    set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
-    goto :found_python
+for %%v in (Python313 Python312 Python311 Python310 Python39 Python38) do (
+    if exist "%LOCALAPPDATA%\Programs\Python\%%v\python.exe" (
+        set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\%%v\python.exe"
+        goto :found_python
+    )
 )
-if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
-    set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
-    goto :found_python
-)
+
 if exist "C:\Python311\python.exe" (
     set "PYTHON_EXE=C:\Python311\python.exe"
+    goto :found_python
+)
+
+if exist "C:\Python38\python.exe" (
+    set "PYTHON_EXE=C:\Python38\python.exe"
     goto :found_python
 )
 

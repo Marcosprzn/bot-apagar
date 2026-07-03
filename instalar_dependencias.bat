@@ -9,16 +9,31 @@ echo ===================================================
 echo.
 
 REM ====================================================
-REM PASSO 1: Detectar arquitetura 32 ou 64 bits
+REM PASSO 1: Detectar Windows 7 e arquitetura
 REM ====================================================
-echo [1/4] Verificando arquitetura do sistema...
+echo [1/4] Verificando sistema operacional e arquitetura...
+
+REM Detecta Windows 7 (versao 6.1)
+set "WIN7="
+for /f "tokens=2 delims=." %%a in ('ver') do (
+    if "%%a"=="1" set "WIN7=1"
+)
+if "%WIN7%"=="1" (
+    echo     -> Windows 7 detectado (usando Python 3.8.10)
+    set "PY_VER=3.8.10"
+    set "PY_DIR_VER=Python38"
+) else (
+    echo     -> Windows 8/10/11 detectado (usando Python 3.11.8)
+    set "PY_VER=3.11.8"
+    set "PY_DIR_VER=Python311"
+)
 
 if exist "%ProgramFiles(x86)%" (
-    echo     -> Windows 64-bit detectado.
-    set "PYTHON_URL=https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
+    echo     -> 64-bit detectado.
+    set "PYTHON_URL=https://www.python.org/ftp/python/%PY_VER%/python-%PY_VER%-amd64.exe"
 ) else (
-    echo     -> Windows 32-bit detectado.
-    set "PYTHON_URL=https://www.python.org/ftp/python/3.11.8/python-3.11.8.exe"
+    echo     -> 32-bit detectado.
+    set "PYTHON_URL=https://www.python.org/ftp/python/%PY_VER%/python-%PY_VER%.exe"
 )
 
 echo.
@@ -35,7 +50,7 @@ if %errorlevel% equ 0 (
 )
 
 REM Verifica caminhos comuns antes de baixar
-if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+if exist "%LOCALAPPDATA%\Programs\Python\%PY_DIR_VER%\python.exe" (
     echo     -> Python encontrado localmente, adicionando ao PATH...
     goto :add_path
 )
@@ -47,7 +62,7 @@ REM ====================================================
 REM PASSO 3: Baixar Python via PowerShell (funciona em
 REM          qualquer Windows sem depender do curl)
 REM ====================================================
-echo [3/4] Baixando o Python 3.11.8...
+echo [3/4] Baixando o Python %PY_VER%...
 echo     URL: %PYTHON_URL%
 echo     Aguarde, isso pode demorar alguns minutos...
 echo.
@@ -92,7 +107,7 @@ REM ====================================================
 :add_path
 echo.
 echo     Atualizando PATH desta sessao...
-set "PY_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
+set "PY_DIR=%LOCALAPPDATA%\Programs\Python\%PY_DIR_VER%"
 set "PY_SCRIPTS=%PY_DIR%\Scripts"
 set "PATH=%PY_DIR%;%PY_SCRIPTS%;%PATH%"
 
@@ -110,7 +125,7 @@ echo [4/4] Instalando bibliotecas necessarias...
 echo.
 
 REM Tenta com python direto da sessao atual
-set "PY_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
+set "PY_DIR=%LOCALAPPDATA%\Programs\Python\%PY_DIR_VER%"
 if exist "%PY_DIR%\python.exe" (
     set "PYTHON_EXE=%PY_DIR%\python.exe"
 ) else (
