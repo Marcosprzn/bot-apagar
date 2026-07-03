@@ -92,32 +92,39 @@ echo.
 
 :PULAR_DOWNLOAD
 
+:INSTALAR_BIBLIOTECAS
+
 echo [4/4] Instalando bibliotecas...
+echo.
 
 set "PY_DIR=%LOCALAPPDATA%\Programs\Python\%PY_FOLDER%"
 if exist "%PY_DIR%\python.exe" ( set "PY_EXE=%PY_DIR%\python.exe" ) else ( set "PY_EXE=python" )
 
 echo   Atualizando pip...
 "%PY_EXE%" -m pip install --upgrade pip --quiet
-
-echo   Instalando pywinauto...
-"%PY_EXE%" -m pip install pywinauto
-
-echo   Instalando comtypes...
-"%PY_EXE%" -m pip install comtypes
-
-echo   Instalando pyautogui...
-"%PY_EXE%" -m pip install pyautogui
-
-echo   Instalando Pillow...
-"%PY_EXE%" -m pip install Pillow
-
-echo   Instalando pywin32...
-"%PY_EXE%" -m pip install pywin32
-
 echo.
-echo   Verificando...
-"%PY_EXE%" -c "import pywinauto; import pyautogui; import PIL; print('OK!')"
+
+set LIVROS=pywinauto comtypes pyautogui Pillow pywin32
+
+for %%L in (%LIVROS%) do (
+    echo   Instalando %%L...
+    "%PY_EXE%" -m pip install %%L
+    if errorlevel 1 (
+        echo   [FALHOU] %%L - tentando alternativa...
+        if "%%L"=="pywin32" "%PY_EXE%" -m pip install pywin32==306
+        if "%%L"=="comtypes" "%PY_EXE%" -m pip install comtypes==1.1.11
+    )
+    echo.
+)
+
+echo   Registrando pywin32 no Windows...
+"%PY_EXE%" -c "import win32api" >nul 2>&1
+if errorlevel 1 (
+    "%PY_EXE%" -c "import sys; exec(open(sys.prefix + '/Scripts/pywin32_postinstall.py').read())" -install >nul 2>&1
+)
+
+echo   Verificando instalacao...
+"%PY_EXE%" -c "import pywinauto; import comtypes; import pyautogui; import PIL; import win32api; print('OK!')"
 
 if %errorlevel% equ 0 (
     echo.
@@ -127,8 +134,14 @@ if %errorlevel% equ 0 (
 ) else (
     echo.
     echo ===================================================
-    echo    ERRO NA INSTALACAO DAS BIBLIOTECAS
+    echo    ALGUMAS BIBLIOTECAS FALHARAM
     echo ===================================================
+    echo    Tente instalar manualmente:
+    echo    "%PY_EXE%" -m pip install pywinauto comtypes pyautogui Pillow pywin32
+    echo.
+    "%PY_EXE%" -c "import win32api; print('win32api OK')"
+    "%PY_EXE%" -c "import pywinauto; print('pywinauto OK')"
+    "%PY_EXE%" -c "import pyautogui; print('pyautogui OK')"
 )
 
 echo.
