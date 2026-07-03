@@ -154,46 +154,57 @@ def capturar_grid_pela_tela():
     except:
         return ""
 
-def extrair_saida_e_preco(texto_grid):
-    """Procura por 'Saida' na coluna Movimentacao e extrai Vl.Saida."""
+def extrair_saida_por_data(texto_grid, data_pdf):
+    """Procura 'Saida' na grade que tenha a data igual a data_pdf. Ignora 'Final'."""
     if not texto_grid:
-        return "#N/D", "#N/D"
+        return "#N/D", "grid_vazia"
     
     linhas = texto_grid.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     linhas = [l for l in linhas if l.strip()]
     
     if len(linhas) < 2:
-        return "#N/D", "grid_vazia"
+        return "#N/D", "poucas_linhas"
     
-    # Identifica colunas pelo cabecalho
     cabecalho = linhas[0].split("\t")
-    col_saida = -1
-    col_vl_saida = -1
+    col_mov = col_data = col_vl = -1
     for idx, col in enumerate(cabecalho):
-        col_clean = col.strip().lower()
-        if "movimenta" in col_clean:
-            col_saida = idx
-        if "vl.sa" in col_clean or "vl_sa" in col_clean or "vl. sa" in col_clean:
-            col_vl_saida = idx
+        c = col.strip().lower()
+        if "movimenta" in c:
+            col_mov = idx
+        if "data do movimento" in c or "data movimento" in c:
+            col_data = idx
+        if "vl.sa" in c or "vl_sa" in c or "vl. sa" in c:
+            col_vl = idx
     
-    if col_saida == -1 or col_vl_saida == -1:
-        return "#N/D", f"colunas_nao_encontradas"
+    if -1 in (col_mov, col_data, col_vl):
+        return "#N/D", f"colunas_mov={col_mov}_data={col_data}_vl={col_vl}"
     
-    # Procura linha onde Movimentacao = "Saida"
+    data_pdf = data_pdf.strip()
+    
     for linha in linhas[1:]:
         cols = linha.split("\t")
-        if col_saida < len(cols) and "saida" in cols[col_saida].strip().lower():
-            if col_vl_saida < len(cols):
-                valor = cols[col_vl_saida].strip()
-                return "Saida", valor if valor else "#N/D"
-            return "Saida", "#N/D"
+        if col_mov >= len(cols) or col_data >= len(cols) or col_vl >= len(cols):
+            continue
+        
+        tipo_mov = cols[col_mov].strip().lower()
+        data_grid = cols[col_data].strip()
+        
+        if "final" in tipo_mov or tipo_mov == "":
+            continue
+        if "saida" not in tipo_mov:
+            continue
+        if data_grid != data_pdf:
+            continue
+        
+        valor = cols[col_vl].strip()
+        return "Saida", valor if valor else "#N/D"
     
-    return "#N/D", "saida_sem_movimento"
+    return "#N/D", f"sem_match_data_{data_pdf}"
 
 # ============================================================
 # GERAR EXCEL
 # ============================================================
-def gerar_excel(linhas, precos_map, caminho):
+def gerar_excel(linhas, resultados, caminho):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Almox"
@@ -204,10 +215,10 @@ def gerar_excel(linhas, precos_map, caminho):
     ]
     ws.append(cabecalhos)
     for item in linhas:
-        cod = item["codigo"]
-        val_unit = precos_map.get(cod, item["val_unit"])
+        chave = (item["codigo"], item["data"])
+        val_unit = resultados.get(chave, item["val_unit"])
         ws.append([
-            cod, item["descricao"], item["dept_codigo"],
+            item["codigo"], item["descricao"], item["dept_codigo"],
             item["dept_nome"], item["data"], item["req"],
             item["qtd"], item["unidade"], val_unit, item["val_total"],
         ])
@@ -279,7 +290,17 @@ with open(LOG_PATH, "w", encoding="utf-8") as log:
     log.write("LOG DE CAPTURA DA GRADE - ALMOX BOT\n")
     log.write("=" * 60 + "\n\n")
 
-precos = {}
+# Agrupa linhas do PDF por codigo: {codigo: [linha1, linha2, ...]}
+linhas_por_codigo = {}
+for item in linhas:
+    c = item["codigo"]
+    if c not in linhas_por_codigo:
+        linhas_por_codigo[c] = []
+    linhas_por_codigo[c].append(item)
+
+# Mapeia (codigo, data) -> valor capturado
+resultados = {}  # chave = (codigo, data)
+
 for i, codigo in enumerate(codigos, 1):
     verificar_pausa()
     if not BOT_RODANDO:
@@ -302,30 +323,31 @@ for i, codigo in enumerate(codigos, 1):
     mouse.click(button="left", coords=FILTRAR_COORDS)
     time.sleep(2)
 
-    # 3. Captura via clipboard
+    # 3. Captura via clipboard (uma vez por codigo)
     texto_grid = capturar_grid_pela_tela()
-    tipo, preco = extrair_saida_e_preco(texto_grid)
 
-    print(f"    -> Tipo: {tipo} | Preco: {preco}")
+    # 4. Para cada linha do PDF com este codigo, tenta match pela data
+    for item in linhas_por_codigo.get(codigo, []):
+        data_pdf = item["data"]
+        tipo, preco = extrair_saida_por_data(texto_grid, data_pdf)
+        chave = (codigo, data_pdf)
+        resultados[chave] = preco
 
-    # Salva no log
+        print(f"    -> Data PDF: {data_pdf} | Tipo: {tipo} | Preco: {preco}")
+
+        if tipo == "#N/D" and texto_grid:
+            print(f"    -> Texto copiado (primeiros 2000): {texto_grid[:2000]}")
+
+    # Salva log completo
     with open(LOG_PATH, "a", encoding="utf-8") as log:
         log.write(f"=== Codigo: {codigo} ===\n")
-        log.write(f"Tipo: {tipo} | Preco: {preco}\n")
-        log.write(f"Tamanho: {len(texto_grid)} chars | Linhas: {len(texto_grid.split(chr(10)))}\n")
+        log.write(f"Tamanho: {len(texto_grid)} chars\n")
         log.write(texto_grid + "\n")
         log.write("=" * 40 + "\n\n")
 
-    if tipo == "#N/D" and texto_grid:
-        print(f"    -> Texto copiado da grid (primeiros 2000):")
-        print(f"       {texto_grid[:2000]}")
-        print(f"    -> Total chars: {len(texto_grid)} | Linhas: {len(texto_grid.split(chr(10)))}")
-
-    precos[codigo] = preco
-
 print()
 print("Gerando planilha final...")
-gerar_excel(linhas, precos, EXCEL_PATH)
+gerar_excel(linhas, resultados, EXCEL_PATH)
 
 print()
 print("=" * 55)
